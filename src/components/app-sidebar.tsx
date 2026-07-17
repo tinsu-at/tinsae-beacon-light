@@ -8,6 +8,7 @@ import {
   TrendingUp,
   Settings,
   Compass,
+  MessageCircle,
 } from "lucide-react";
 import {
   Sidebar,
@@ -22,8 +23,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const items = [
+export const NAV_ITEMS = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Chat", url: "/chat", icon: MessageCircle },
   { title: "Tasks", url: "/tasks", icon: CheckSquare },
   { title: "Habits", url: "/habits", icon: Flame },
   { title: "Journal", url: "/journal", icon: BookText },
@@ -38,10 +40,10 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="hidden md:flex">
       <SidebarHeader className="border-b border-sidebar-border">
         <Link to="/dashboard" className="flex items-center gap-2 px-2 py-2">
-          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-lg gradient-forest text-primary-foreground">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl gradient-forest text-primary-foreground shadow-soft">
             <Compass className="h-4 w-4" />
           </div>
           {!collapsed && (
@@ -54,7 +56,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>Navigate</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => {
+              {NAV_ITEMS.map((item) => {
                 const active = pathname === item.url;
                 return (
                   <SidebarMenuItem key={item.url}>

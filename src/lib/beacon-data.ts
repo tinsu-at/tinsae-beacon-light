@@ -32,6 +32,23 @@ export const CHALLENGES = [
   "Ask for feedback on something you're working on.",
 ];
 
+export const MISSIONS = [
+  "Show up before you feel ready.",
+  "Do the hardest thing first — earn the rest of the day.",
+  "Speak with intention. Listen with presence.",
+  "Choose the harder right over the easier wrong.",
+  "Move your body. Steady your mind.",
+  "Finish what you started before starting something new.",
+  "Be the calmest person in every room you enter.",
+  "Do one thing today your future self will thank you for.",
+  "Compete only with who you were yesterday.",
+  "Leave every space better than you found it.",
+  "Keep your word — especially the ones you gave yourself.",
+  "Master a small skill for twenty focused minutes.",
+  "Say less. Mean more.",
+  "Lead by example, even when no one is watching.",
+];
+
 // Deterministic daily index from date string YYYY-MM-DD
 export function dayIndex(dateStr: string): number {
   let h = 0;
@@ -45,6 +62,10 @@ export function quoteOfDay(dateStr: string) {
 export function challengeOfDay(dateStr: string) {
   return CHALLENGES[dayIndex(dateStr) % CHALLENGES.length];
 }
+export function missionOfDay(dateStr: string) {
+  return MISSIONS[dayIndex(dateStr) % MISSIONS.length];
+}
+
 
 export function todayISO() {
   const d = new Date();
