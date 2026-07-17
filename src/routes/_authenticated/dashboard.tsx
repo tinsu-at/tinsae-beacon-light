@@ -130,15 +130,28 @@ function Dashboard() {
     queryKey: ["goals-open", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data } = await supabase
+      const { data: rows } = await supabase
         .from("goals")
-        .select("id,title,progress,target,status")
+        .select("id,title,completed")
         .eq("user_id", user!.id)
-        .neq("status", "completed")
+        .eq("completed", false)
         .limit(2);
-      return data ?? [];
+      const list = rows ?? [];
+      const withProgress = await Promise.all(
+        list.map(async (g) => {
+          const { data: ms } = await supabase
+            .from("milestones")
+            .select("completed")
+            .eq("goal_id", g.id);
+          const total = ms?.length ?? 0;
+          const done = (ms ?? []).filter((m) => m.completed).length;
+          return { id: g.id, title: g.title, progress: done, target: total };
+        }),
+      );
+      return withProgress;
     },
   });
+
 
   const { data: achievements } = useQuery({
     queryKey: ["recent-achievements", user?.id],
