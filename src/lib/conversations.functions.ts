@@ -62,7 +62,7 @@ export const getConversationMessages = createServerFn({ method: "POST" })
       messages: (rows ?? []) as Array<{
         id: string;
         role: string;
-        parts: unknown;
+        parts: Json;
       }>,
     };
   });
