@@ -85,10 +85,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Beacon — Your personal growth companion" },
       {
         property: "og:description",
-        content: "Build discipline, confidence, and daily habits with Beacon.",
+        content: "Beacon is your coach, mentor, and accountability partner. Build discipline, confidence and daily habits — and lead by example.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Beacon — Your personal growth companion" },
+      { name: "twitter:description", content: "Beacon is your coach, mentor, and accountability partner. Build discipline, confidence and daily habits — and lead by example." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fe20fbc7-f332-4618-adfa-bd4b1181800a/id-preview-2d6306a4--e17f355b-71f9-465a-8385-58ca9aaaed69.lovable.app-1784378721485.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fe20fbc7-f332-4618-adfa-bd4b1181800a/id-preview-2d6306a4--e17f355b-71f9-465a-8385-58ca9aaaed69.lovable.app-1784378721485.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
