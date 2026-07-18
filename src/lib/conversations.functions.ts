@@ -56,10 +56,12 @@ export const getConversationMessages = createServerFn({ method: "POST" })
       .order("created_at", { ascending: true });
     if (error) throw new Error(error.message);
 
-    const messages = (rows ?? []).map((r) => ({
-      id: r.id,
-      role: r.role as "user" | "assistant" | "system",
-      parts: r.parts as unknown as Array<{ type: string; [k: string]: unknown }>,
-    }));
-    return { conversation: conv, messages };
+    return {
+      conversation: conv,
+      messages: (rows ?? []) as Array<{
+        id: string;
+        role: string;
+        parts: unknown;
+      }>,
+    };
   });
