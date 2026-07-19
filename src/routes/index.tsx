@@ -67,8 +67,8 @@ function Landing() {
               style={{ animationDelay: "240ms" }}
             >
               <Button asChild size="lg" className="rounded-full px-6 shadow-elegant transition-transform hover:-translate-y-0.5">
-                <Link to="/auth" search={{ mode: "signup" } as never}>
-                  Start your journey <ArrowRight className="ml-1 h-4 w-4" />
+                <Link to="/auth">
+                  Enter Beacon <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="rounded-full px-6">
