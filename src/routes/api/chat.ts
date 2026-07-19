@@ -209,7 +209,7 @@ export const Route = createFileRoute("/api/chat")({
   },
 });
 
-type SupabaseClientLike = ReturnType<typeof createClient<Database>>;
+type SupabaseClientLike = SupabaseClient<Database>;
 
 async function extractAndSaveMemories(opts: {
   userText: string;
