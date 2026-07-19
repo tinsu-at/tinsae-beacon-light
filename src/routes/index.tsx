@@ -33,13 +33,8 @@ function Landing() {
           <span className="font-serif text-xl font-semibold tracking-tight">Beacon</span>
         </Link>
         <nav className="flex items-center gap-2">
-          <Button asChild variant="ghost">
-            <Link to="/auth">Sign in</Link>
-          </Button>
           <Button asChild className="rounded-full">
-            <Link to="/auth" search={{ mode: "signup" } as never}>
-              Get started
-            </Link>
+            <Link to="/auth">Sign in</Link>
           </Button>
         </nav>
       </header>
