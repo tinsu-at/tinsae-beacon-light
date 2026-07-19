@@ -45,8 +45,7 @@ export const addMemory = createServerFn({ method: "POST" })
       content: data.content,
       category: data.category,
       source: "manual",
-      // @ts-expect-error vector column accepts string form
-      embedding: toPgVector(emb),
+      embedding: toPgVector(emb) as unknown as string,
     });
     if (error) throw new Error(error.message);
     return { ok: true };
