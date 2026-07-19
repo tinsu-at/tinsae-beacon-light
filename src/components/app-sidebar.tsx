@@ -77,6 +77,11 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      {!collapsed && (
+        <SidebarFooter className="border-t border-sidebar-border p-2">
+          <InstallPwaButton />
+        </SidebarFooter>
+      )}
     </Sidebar>
   );
 }
