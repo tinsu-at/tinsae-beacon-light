@@ -40,8 +40,9 @@ export function initPwa() {
     return;
   }
   if (!("serviceWorker" in navigator)) return;
-  // Dynamically import to keep this out of the initial SSR chunk.
-  (import(/* @vite-ignore */ "virtual:pwa-register") as Promise<{
+  // Dynamically import via a computed specifier so TS doesn't require a type.
+  const spec = "virtual:pwa-register";
+  (import(/* @vite-ignore */ spec) as Promise<{
     registerSW: (opts?: { immediate?: boolean }) => void;
   }>)
     .then(({ registerSW }) => {
