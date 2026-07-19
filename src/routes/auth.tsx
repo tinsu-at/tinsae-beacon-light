@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-const searchSchema = z.object({ mode: z.enum(["signin", "signup", "forgot"]).optional() });
+const searchSchema = z.object({ mode: z.enum(["signin", "forgot"]).optional() });
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s) => searchSchema.parse(s),
@@ -41,21 +41,20 @@ function AuthPage() {
 
           <div className="rounded-3xl border border-border bg-card p-6 shadow-elegant md:p-8">
             <Tabs value={tab} onValueChange={setTab}>
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign in</TabsTrigger>
-                <TabsTrigger value="signup">Sign up</TabsTrigger>
                 <TabsTrigger value="forgot">Reset</TabsTrigger>
               </TabsList>
               <TabsContent value="signin" className="mt-6">
                 <SignInForm />
               </TabsContent>
-              <TabsContent value="signup" className="mt-6">
-                <SignUpForm onDone={() => setTab("signin")} />
-              </TabsContent>
               <TabsContent value="forgot" className="mt-6">
                 <ForgotForm />
               </TabsContent>
             </Tabs>
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              Beacon is a private, single-user companion. New sign-ups are disabled.
+            </p>
           </div>
         </div>
       </div>
@@ -97,56 +96,6 @@ function SignInForm() {
   );
 }
 
-function SignUpForm({ onDone }: { onDone: () => void }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
-  const navigate = useNavigate();
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setBusy(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: { display_name: name },
-      },
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    if (data.session) {
-      toast.success("Welcome to Beacon");
-      navigate({ to: "/dashboard" });
-    } else {
-      toast.success("Check your email to confirm your account");
-      onDone();
-    }
-  }
-
-  return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <h2 className="font-serif text-xl font-semibold">Create your account</h2>
-      <div className="space-y-1.5">
-        <Label htmlFor="up-name">Name</Label>
-        <Input id="up-name" required value={name} onChange={(e) => setName(e.target.value)} />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="up-email">Email</Label>
-        <Input id="up-email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="up-pass">Password</Label>
-        <Input id="up-pass" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
-      </div>
-      <Button type="submit" disabled={busy} className="w-full rounded-full">
-        {busy ? "Creating..." : "Create account"}
-      </Button>
-    </form>
-  );
-}
 
 function ForgotForm() {
   const [email, setEmail] = useState("");

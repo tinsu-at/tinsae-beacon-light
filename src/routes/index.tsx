@@ -33,13 +33,8 @@ function Landing() {
           <span className="font-serif text-xl font-semibold tracking-tight">Beacon</span>
         </Link>
         <nav className="flex items-center gap-2">
-          <Button asChild variant="ghost">
-            <Link to="/auth">Sign in</Link>
-          </Button>
           <Button asChild className="rounded-full">
-            <Link to="/auth" search={{ mode: "signup" } as never}>
-              Get started
-            </Link>
+            <Link to="/auth">Sign in</Link>
           </Button>
         </nav>
       </header>
@@ -72,12 +67,12 @@ function Landing() {
               style={{ animationDelay: "240ms" }}
             >
               <Button asChild size="lg" className="rounded-full px-6 shadow-elegant transition-transform hover:-translate-y-0.5">
-                <Link to="/auth" search={{ mode: "signup" } as never}>
-                  Start your journey <ArrowRight className="ml-1 h-4 w-4" />
+                <Link to="/auth">
+                  Enter Beacon <ArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="rounded-full px-6">
-                <Link to="/auth">I already have an account</Link>
+                <Link to="/auth">Reset password</Link>
               </Button>
             </div>
           </div>

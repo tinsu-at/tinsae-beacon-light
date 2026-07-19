@@ -9,6 +9,7 @@ import {
   Settings,
   Compass,
   MessageCircle,
+  Brain,
 } from "lucide-react";
 import {
   Sidebar,
@@ -17,15 +18,18 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
+  SidebarFooter,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { InstallPwaButton } from "@/components/install-pwa";
 
 export const NAV_ITEMS = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Chat", url: "/chat", icon: MessageCircle },
+  { title: "Memory", url: "/memory", icon: Brain },
   { title: "Tasks", url: "/tasks", icon: CheckSquare },
   { title: "Habits", url: "/habits", icon: Flame },
   { title: "Journal", url: "/journal", icon: BookText },
@@ -73,6 +77,11 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      {!collapsed && (
+        <SidebarFooter className="border-t border-sidebar-border p-2">
+          <InstallPwaButton />
+        </SidebarFooter>
+      )}
     </Sidebar>
   );
 }
