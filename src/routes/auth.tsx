@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-const searchSchema = z.object({ mode: z.enum(["signin", "signup", "forgot"]).optional() });
+const searchSchema = z.object({ mode: z.enum(["signin", "forgot"]).optional() });
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s) => searchSchema.parse(s),
@@ -41,21 +41,20 @@ function AuthPage() {
 
           <div className="rounded-3xl border border-border bg-card p-6 shadow-elegant md:p-8">
             <Tabs value={tab} onValueChange={setTab}>
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign in</TabsTrigger>
-                <TabsTrigger value="signup">Sign up</TabsTrigger>
                 <TabsTrigger value="forgot">Reset</TabsTrigger>
               </TabsList>
               <TabsContent value="signin" className="mt-6">
                 <SignInForm />
               </TabsContent>
-              <TabsContent value="signup" className="mt-6">
-                <SignUpForm onDone={() => setTab("signin")} />
-              </TabsContent>
               <TabsContent value="forgot" className="mt-6">
                 <ForgotForm />
               </TabsContent>
             </Tabs>
+            <p className="mt-6 text-center text-xs text-muted-foreground">
+              Beacon is a private, single-user companion. New sign-ups are disabled.
+            </p>
           </div>
         </div>
       </div>
