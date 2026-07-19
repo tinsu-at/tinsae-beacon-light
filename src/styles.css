@@ -5,8 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Beacon design system — Rose / Cream / Burgundy.
- * 60% soft rose surfaces, 30% cream neutral, 10% deep burgundy accent.
+ * Beacon design system — Royal Blue / Cream / Pale Cyan.
+ * 60% royal blue #28469E (primary), 30% cream/ivory neutral, 10% pale cyan #CAE8E8 accent.
  * All colors in oklch. Do not hard-code hex in components.
  */
 
@@ -41,10 +41,12 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
-  --color-rose: var(--rose);
-  --color-rose-foreground: var(--rose-foreground);
-  --color-gold: var(--rose);
-  --color-gold-foreground: var(--rose-foreground);
+  --color-rose: var(--accent-cyan);
+  --color-rose-foreground: var(--accent-cyan-foreground);
+  --color-gold: var(--accent-cyan);
+  --color-gold-foreground: var(--accent-cyan-foreground);
+  --color-cyan: var(--accent-cyan);
+  --color-cyan-foreground: var(--accent-cyan-foreground);
   --color-beige: var(--beige);
   --color-beige-foreground: var(--beige-foreground);
   --color-chart-1: var(--chart-1);
@@ -65,108 +67,107 @@
 :root {
   --radius: 1rem;
 
-  /* Cream ivory background — 30% neutral */
-  --background: oklch(0.985 0.012 60);
-  --foreground: oklch(0.22 0.04 20);
+  /* Cream ivory background — the 30% warm neutral */
+  --background: oklch(0.985 0.014 85);
+  --foreground: oklch(0.22 0.05 260);
 
-  --card: oklch(0.995 0.008 60);
-  --card-foreground: oklch(0.22 0.04 20);
-  --popover: oklch(0.995 0.008 60);
-  --popover-foreground: oklch(0.22 0.04 20);
+  --card: oklch(0.995 0.008 85);
+  --card-foreground: oklch(0.22 0.05 260);
+  --popover: oklch(0.995 0.008 85);
+  --popover-foreground: oklch(0.22 0.05 260);
 
-  /* Deep burgundy #780106 — the 10% accent, used as shadcn primary
-     so buttons, links, focus rings, active states use it. */
-  --primary: oklch(0.38 0.16 25);
-  --primary-foreground: oklch(0.985 0.012 60);
+  /* Royal Blue #28469E — the 60% dominant, used as shadcn primary */
+  --primary: oklch(0.42 0.16 265);
+  --primary-foreground: oklch(0.985 0.014 85);
 
-  --secondary: oklch(0.94 0.03 25);
-  --secondary-foreground: oklch(0.38 0.16 25);
+  --secondary: oklch(0.94 0.03 230);
+  --secondary-foreground: oklch(0.32 0.14 265);
 
-  --muted: oklch(0.955 0.02 40);
-  --muted-foreground: oklch(0.48 0.04 25);
+  --muted: oklch(0.955 0.02 85);
+  --muted-foreground: oklch(0.48 0.04 260);
 
   /* Cream beige neutral surface */
-  --beige: oklch(0.965 0.018 70);
-  --beige-foreground: oklch(0.32 0.06 25);
+  --beige: oklch(0.965 0.02 85);
+  --beige-foreground: oklch(0.32 0.08 260);
 
-  /* Soft rose #F7B5B3 — the 60% dominant on hero/cards */
-  --rose: oklch(0.85 0.06 20);
-  --rose-foreground: oklch(0.32 0.12 25);
+  /* Pale cyan #CAE8E8 — the 10% accent */
+  --accent-cyan: oklch(0.9 0.035 200);
+  --accent-cyan-foreground: oklch(0.32 0.14 265);
 
-  --accent: oklch(0.92 0.045 20);
-  --accent-foreground: oklch(0.38 0.16 25);
+  --accent: oklch(0.9 0.035 200);
+  --accent-foreground: oklch(0.32 0.14 265);
 
   --destructive: oklch(0.55 0.22 25);
-  --destructive-foreground: oklch(0.985 0.012 60);
+  --destructive-foreground: oklch(0.985 0.014 85);
 
-  --border: oklch(0.9 0.03 30);
-  --input: oklch(0.9 0.03 30);
-  --ring: oklch(0.38 0.16 25);
+  --border: oklch(0.9 0.02 240);
+  --input: oklch(0.9 0.02 240);
+  --ring: oklch(0.42 0.16 265);
 
-  --chart-1: oklch(0.38 0.16 25);
-  --chart-2: oklch(0.85 0.06 20);
-  --chart-3: oklch(0.7 0.11 25);
-  --chart-4: oklch(0.55 0.14 25);
-  --chart-5: oklch(0.9 0.04 60);
+  --chart-1: oklch(0.42 0.16 265);
+  --chart-2: oklch(0.9 0.035 200);
+  --chart-3: oklch(0.62 0.12 250);
+  --chart-4: oklch(0.55 0.14 265);
+  --chart-5: oklch(0.9 0.02 85);
 
-  --sidebar: oklch(0.98 0.014 55);
-  --sidebar-foreground: oklch(0.28 0.04 25);
-  --sidebar-primary: oklch(0.38 0.16 25);
-  --sidebar-primary-foreground: oklch(0.985 0.012 60);
-  --sidebar-accent: oklch(0.94 0.035 25);
-  --sidebar-accent-foreground: oklch(0.38 0.16 25);
-  --sidebar-border: oklch(0.9 0.03 30);
-  --sidebar-ring: oklch(0.38 0.16 25);
+  --sidebar: oklch(0.98 0.014 85);
+  --sidebar-foreground: oklch(0.28 0.05 260);
+  --sidebar-primary: oklch(0.42 0.16 265);
+  --sidebar-primary-foreground: oklch(0.985 0.014 85);
+  --sidebar-accent: oklch(0.94 0.035 230);
+  --sidebar-accent-foreground: oklch(0.32 0.14 265);
+  --sidebar-border: oklch(0.9 0.02 240);
+  --sidebar-ring: oklch(0.42 0.16 265);
 }
 
 .dark {
-  --background: oklch(0.16 0.02 25);
-  --foreground: oklch(0.96 0.02 60);
+  --background: oklch(0.17 0.03 260);
+  --foreground: oklch(0.96 0.02 85);
 
-  --card: oklch(0.2 0.025 25);
-  --card-foreground: oklch(0.96 0.02 60);
-  --popover: oklch(0.2 0.025 25);
-  --popover-foreground: oklch(0.96 0.02 60);
+  --card: oklch(0.21 0.035 260);
+  --card-foreground: oklch(0.96 0.02 85);
+  --popover: oklch(0.21 0.035 260);
+  --popover-foreground: oklch(0.96 0.02 85);
 
-  --primary: oklch(0.78 0.11 20);
-  --primary-foreground: oklch(0.18 0.04 25);
+  --primary: oklch(0.72 0.13 250);
+  --primary-foreground: oklch(0.17 0.04 260);
 
-  --secondary: oklch(0.24 0.03 25);
-  --secondary-foreground: oklch(0.96 0.02 60);
+  --secondary: oklch(0.26 0.04 260);
+  --secondary-foreground: oklch(0.96 0.02 85);
 
-  --muted: oklch(0.24 0.025 25);
-  --muted-foreground: oklch(0.72 0.03 60);
+  --muted: oklch(0.24 0.03 260);
+  --muted-foreground: oklch(0.74 0.03 85);
 
-  --beige: oklch(0.26 0.03 40);
-  --beige-foreground: oklch(0.96 0.02 60);
+  --beige: oklch(0.28 0.03 85);
+  --beige-foreground: oklch(0.96 0.02 85);
 
-  --rose: oklch(0.6 0.1 20);
-  --rose-foreground: oklch(0.96 0.02 60);
+  --accent-cyan: oklch(0.62 0.06 200);
+  --accent-cyan-foreground: oklch(0.96 0.02 85);
 
-  --accent: oklch(0.28 0.04 25);
-  --accent-foreground: oklch(0.96 0.02 60);
+  --accent: oklch(0.3 0.05 260);
+  --accent-foreground: oklch(0.96 0.02 85);
 
   --destructive: oklch(0.6 0.22 25);
-  --destructive-foreground: oklch(0.99 0.012 60);
+  --destructive-foreground: oklch(0.99 0.014 85);
 
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.78 0.11 20);
+  --ring: oklch(0.72 0.13 250);
 
-  --chart-1: oklch(0.78 0.11 20);
-  --chart-2: oklch(0.6 0.1 20);
-  --chart-3: oklch(0.7 0.11 25);
-  --chart-4: oklch(0.5 0.14 25);
-  --chart-5: oklch(0.4 0.08 40);
+  --chart-1: oklch(0.72 0.13 250);
+  --chart-2: oklch(0.62 0.06 200);
+  --chart-3: oklch(0.55 0.12 265);
+  --chart-4: oklch(0.5 0.14 265);
+  --chart-5: oklch(0.4 0.03 85);
 
-  --sidebar: oklch(0.18 0.022 25);
-  --sidebar-foreground: oklch(0.96 0.02 60);
-  --sidebar-primary: oklch(0.78 0.11 20);
-  --sidebar-primary-foreground: oklch(0.18 0.04 25);
-  --sidebar-accent: oklch(0.24 0.03 25);
-  --sidebar-accent-foreground: oklch(0.96 0.02 60);
+  --sidebar: oklch(0.19 0.03 260);
+  --sidebar-foreground: oklch(0.96 0.02 85);
+  --sidebar-primary: oklch(0.72 0.13 250);
+  --sidebar-primary-foreground: oklch(0.17 0.04 260);
+  --sidebar-accent: oklch(0.26 0.04 260);
+  --sidebar-accent-foreground: oklch(0.96 0.02 85);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.78 0.11 20);
+  --sidebar-ring: oklch(0.72 0.13 250);
 }
 
 @layer base {
@@ -186,18 +187,18 @@
 }
 
 @utility gradient-forest {
-  background-image: linear-gradient(135deg, var(--color-primary), color-mix(in oklab, var(--color-primary) 55%, var(--color-rose) 45%));
+  background-image: linear-gradient(135deg, var(--color-primary), color-mix(in oklab, var(--color-primary) 55%, var(--color-accent-cyan) 45%));
 }
 
 @utility gradient-rose {
-  background-image: linear-gradient(135deg, var(--color-rose), color-mix(in oklab, var(--color-rose) 55%, var(--color-background) 45%));
+  background-image: linear-gradient(135deg, var(--color-accent-cyan), color-mix(in oklab, var(--color-accent-cyan) 55%, var(--color-background) 45%));
 }
 
 @utility gradient-hero {
   background-image:
-    radial-gradient(1200px 500px at 15% 10%, color-mix(in oklab, var(--color-rose) 55%, transparent), transparent 60%),
-    radial-gradient(900px 500px at 90% 20%, color-mix(in oklab, var(--color-primary) 18%, transparent), transparent 65%),
-    linear-gradient(180deg, var(--color-background), color-mix(in oklab, var(--color-rose) 25%, var(--color-background)));
+    radial-gradient(1200px 500px at 15% 10%, color-mix(in oklab, var(--color-accent-cyan) 55%, transparent), transparent 60%),
+    radial-gradient(900px 500px at 90% 20%, color-mix(in oklab, var(--color-primary) 22%, transparent), transparent 65%),
+    linear-gradient(180deg, var(--color-background), color-mix(in oklab, var(--color-accent-cyan) 22%, var(--color-background)));
 }
 
 @utility shadow-elegant {
