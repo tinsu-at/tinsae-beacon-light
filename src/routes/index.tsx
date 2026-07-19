@@ -72,7 +72,7 @@ function Landing() {
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="rounded-full px-6">
-                <Link to="/auth">I already have an account</Link>
+                <Link to="/auth">Reset password</Link>
               </Button>
             </div>
           </div>
