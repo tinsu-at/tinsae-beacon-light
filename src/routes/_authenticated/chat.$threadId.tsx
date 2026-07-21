@@ -245,7 +245,27 @@ function ChatWindow({
               <Message key={m.id} from={m.role}>
                 <MessageContent>
                   {m.role === "assistant" ? (
-                    <MessageResponse>{text}</MessageResponse>
+                    <>
+                      <MessageResponse>{text}</MessageResponse>
+                      {ttsSupported && text.trim() && (
+                        <button
+                          type="button"
+                          onClick={() => toggleSpeakMessage(m.id, text)}
+                          className="mt-2 inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] text-muted-foreground transition hover:text-foreground"
+                          aria-label={speakingId === m.id ? "Stop speaking" : "Speak this message"}
+                        >
+                          {speakingId === m.id ? (
+                            <>
+                              <VolumeX className="h-3 w-3" /> Stop
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 className="h-3 w-3" /> Listen
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </>
                   ) : (
                     <span className="whitespace-pre-wrap">{text}</span>
                   )}
