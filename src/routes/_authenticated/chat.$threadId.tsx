@@ -153,6 +153,67 @@ function ChatWindow({
     if (!isBusy) textareaRef.current?.focus();
   }, [isBusy, threadId]);
 
+  // Auto-speak the newest assistant message when enabled
+  const lastSpokenRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!autoSpeak || !ttsSupported) return;
+    if (status !== "ready") return;
+    const last = [...messages].reverse().find((m) => m.role === "assistant");
+    if (!last || last.id === lastSpokenRef.current) return;
+    const text = last.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+    if (!text.trim()) return;
+    lastSpokenRef.current = last.id;
+    setSpeakingId(last.id);
+    speak(text);
+    const t = setTimeout(() => setSpeakingId(null), Math.min(30000, text.length * 60));
+    return () => clearTimeout(t);
+  }, [autoSpeak, ttsSupported, status, messages]);
+
+  useEffect(() => {
+    return () => {
+      dictationRef.current?.stop();
+      stopSpeaking();
+    };
+  }, []);
+
+  function toggleDictation() {
+    if (isListening) {
+      dictationRef.current?.stop();
+      dictationRef.current = null;
+      setIsListening(false);
+      return;
+    }
+    const handle = startDictation({
+      onPartial: (t) => setInput(t),
+      onFinal: (t) => {
+        setInput((prev) => (prev ? prev + " " + t : t).trim());
+        setIsListening(false);
+      },
+      onError: (e) => {
+        toast.error("Voice input error: " + e);
+        setIsListening(false);
+      },
+    });
+    if (!handle) {
+      toast.error("Voice input is not supported in this browser");
+      return;
+    }
+    dictationRef.current = handle;
+    setIsListening(true);
+  }
+
+  function toggleSpeakMessage(id: string, text: string) {
+    if (!ttsSupported) return;
+    if (speakingId === id) {
+      stopSpeaking();
+      setSpeakingId(null);
+      return;
+    }
+    setSpeakingId(id);
+    speak(text);
+    setTimeout(() => setSpeakingId((cur) => (cur === id ? null : cur)), Math.min(30000, text.length * 60));
+  }
+
   async function handleSubmit(msg: PromptInputMessage) {
     const text = msg.text.trim();
     if (!text || isBusy) return;
