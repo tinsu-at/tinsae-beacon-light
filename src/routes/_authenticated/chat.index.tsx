@@ -13,10 +13,10 @@ export const Route = createFileRoute("/_authenticated/chat/")({
 });
 
 const STARTERS = [
-  "How do I stay disciplined when I don't feel like it?",
-  "Reflect with me on today.",
-  "Help me plan a focused morning routine.",
-  "I need to speak up more in meetings. Where do I start?",
+  "Morning briefing: review yesterday, set my top 3 priorities for today, and give me one confidence challenge.",
+  "Evening reflection: ask me what I accomplished, what distracted me, what I learned, and what I'll improve tomorrow.",
+  "Challenge my current plan — where am I fooling myself?",
+  "Help me design a tiny morning routine I actually won't skip.",
 ];
 
 function ChatIndex() {
