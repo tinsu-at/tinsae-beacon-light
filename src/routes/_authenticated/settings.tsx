@@ -10,22 +10,38 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, BellRing } from "lucide-react";
+import {
+  DEFAULT_NOTIF_PREFS,
+  loadNotifPrefs,
+  saveNotifPrefs,
+  requestNotifPermission,
+  notifPermission,
+  type NotifKey,
+  type NotifPrefs,
+} from "@/lib/notifications";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — Beacon" }] }),
   component: SettingsPage,
 });
 
-const NOTIF_KEY = "beacon-notif";
+const NOTIF_LABELS: Record<NotifKey, { label: string; desc: string }> = {
+  morningBriefing: { label: "Morning briefing", desc: "Plan the day with Beacon." },
+  confidenceChallenge: { label: "Confidence challenge", desc: "One brave act per day." },
+  habitReminder: { label: "Habit reminder", desc: "Log your habits, keep the streak." },
+  journalReminder: { label: "Journal nudge", desc: "Three lines about today." },
+  eveningReflection: { label: "Evening reflection", desc: "The Beacon Principle check-in." },
+  dailyReview: { label: "Daily review", desc: "Wins, distractions, lessons." },
+};
 
 function SettingsPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const { theme, setTheme } = useTheme();
   const [name, setName] = useState("");
-  const [notifDaily, setNotifDaily] = useState(true);
-  const [notifChallenge, setNotifChallenge] = useState(true);
+  const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_NOTIF_PREFS);
+  const [permission, setPermission] = useState<NotificationPermission>("default");
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -41,14 +57,8 @@ function SettingsPage() {
   }, [profile]);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(NOTIF_KEY);
-      if (raw) {
-        const p = JSON.parse(raw);
-        setNotifDaily(p.daily ?? true);
-        setNotifChallenge(p.challenge ?? true);
-      }
-    } catch {}
+    setPrefs(loadNotifPrefs());
+    setPermission(notifPermission());
   }, []);
 
   async function saveProfile(e: React.FormEvent) {
@@ -60,11 +70,21 @@ function SettingsPage() {
     qc.invalidateQueries({ queryKey: ["profile"] });
   }
 
-  function saveNotif(next: { daily?: boolean; challenge?: boolean }) {
-    const merged = { daily: notifDaily, challenge: notifChallenge, ...next };
-    setNotifDaily(merged.daily);
-    setNotifChallenge(merged.challenge);
-    localStorage.setItem(NOTIF_KEY, JSON.stringify(merged));
+  function updatePref(key: NotifKey, patch: Partial<NotifPrefs[NotifKey]>) {
+    const next: NotifPrefs = { ...prefs, [key]: { ...prefs[key], ...patch } };
+    setPrefs(next);
+    saveNotifPrefs(next);
+  }
+
+  async function enableNotifications() {
+    const p = await requestNotifPermission();
+    setPermission(p);
+    if (p === "granted") {
+      toast.success("Notifications enabled");
+      saveNotifPrefs(prefs);
+    } else {
+      toast.error("Notification permission denied");
+    }
   }
 
   return (
@@ -119,20 +139,52 @@ function SettingsPage() {
           <CardTitle className="font-serif text-lg">Notifications</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <NotifRow
-            label="Daily planner reminder"
-            desc="A gentle nudge to plan your day."
-            checked={notifDaily}
-            onChange={(v) => saveNotif({ daily: v })}
-          />
-          <NotifRow
-            label="Confidence challenge"
-            desc="A new challenge every morning."
-            checked={notifChallenge}
-            onChange={(v) => saveNotif({ challenge: v })}
-          />
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border p-4">
+            <div className="flex items-center gap-3">
+              <BellRing className="h-4 w-4" />
+              <div>
+                <p className="font-medium">Browser notifications</p>
+                <p className="text-xs text-muted-foreground">
+                  {permission === "granted"
+                    ? "Enabled on this device."
+                    : permission === "denied"
+                      ? "Blocked — enable in your browser site settings."
+                      : "Allow Beacon to remind you at the right time."}
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              className="rounded-full"
+              onClick={enableNotifications}
+              disabled={permission === "granted"}
+            >
+              {permission === "granted" ? "Enabled" : "Enable"}
+            </Button>
+          </div>
+
+          {(Object.keys(NOTIF_LABELS) as NotifKey[]).map((key) => (
+            <div key={key} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border p-4">
+              <div className="min-w-0">
+                <p className="font-medium">{NOTIF_LABELS[key].label}</p>
+                <p className="text-xs text-muted-foreground">{NOTIF_LABELS[key].desc}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Input
+                  type="time"
+                  value={prefs[key].time}
+                  onChange={(e) => updatePref(key, { time: e.target.value })}
+                  className="h-9 w-28"
+                />
+                <Switch
+                  checked={prefs[key].enabled}
+                  onCheckedChange={(v) => updatePref(key, { enabled: v })}
+                />
+              </div>
+            </div>
+          ))}
           <p className="text-xs text-muted-foreground">
-            Preferences are saved on this device. Push notifications will arrive in a future release.
+            Reminders run locally on this device while Beacon is open or in the background. Keep the app installed for the most reliable delivery.
           </p>
         </CardContent>
       </Card>
@@ -140,14 +192,3 @@ function SettingsPage() {
   );
 }
 
-function NotifRow({ label, desc, checked, onChange }: { label: string; desc: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div className="flex items-center justify-between rounded-2xl border border-border p-4">
-      <div>
-        <p className="font-medium">{label}</p>
-        <p className="text-xs text-muted-foreground">{desc}</p>
-      </div>
-      <Switch checked={checked} onCheckedChange={onChange} />
-    </div>
-  );
-}

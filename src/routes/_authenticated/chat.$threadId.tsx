@@ -21,7 +21,16 @@ import {
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  isSpeechRecognitionSupported,
+  isSpeechSynthesisSupported,
+  startDictation,
+  speak,
+  stopSpeaking,
+  type DictationHandle,
+} from "@/lib/voice";
 import { toast } from "sonner";
 
 const searchSchema = z.object({
@@ -99,6 +108,12 @@ function ChatWindow({
 }) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const dictationRef = useRef<DictationHandle | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [autoSpeak, setAutoSpeak] = useState(false);
+  const voiceSupported = isSpeechRecognitionSupported();
+  const ttsSupported = isSpeechSynthesisSupported();
 
   const transport = useMemo(
     () =>
@@ -138,6 +153,67 @@ function ChatWindow({
     if (!isBusy) textareaRef.current?.focus();
   }, [isBusy, threadId]);
 
+  // Auto-speak the newest assistant message when enabled
+  const lastSpokenRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!autoSpeak || !ttsSupported) return;
+    if (status !== "ready") return;
+    const last = [...messages].reverse().find((m) => m.role === "assistant");
+    if (!last || last.id === lastSpokenRef.current) return;
+    const text = last.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
+    if (!text.trim()) return;
+    lastSpokenRef.current = last.id;
+    setSpeakingId(last.id);
+    speak(text);
+    const t = setTimeout(() => setSpeakingId(null), Math.min(30000, text.length * 60));
+    return () => clearTimeout(t);
+  }, [autoSpeak, ttsSupported, status, messages]);
+
+  useEffect(() => {
+    return () => {
+      dictationRef.current?.stop();
+      stopSpeaking();
+    };
+  }, []);
+
+  function toggleDictation() {
+    if (isListening) {
+      dictationRef.current?.stop();
+      dictationRef.current = null;
+      setIsListening(false);
+      return;
+    }
+    const handle = startDictation({
+      onPartial: (t) => setInput(t),
+      onFinal: (t) => {
+        setInput((prev) => (prev ? prev + " " + t : t).trim());
+        setIsListening(false);
+      },
+      onError: (e) => {
+        toast.error("Voice input error: " + e);
+        setIsListening(false);
+      },
+    });
+    if (!handle) {
+      toast.error("Voice input is not supported in this browser");
+      return;
+    }
+    dictationRef.current = handle;
+    setIsListening(true);
+  }
+
+  function toggleSpeakMessage(id: string, text: string) {
+    if (!ttsSupported) return;
+    if (speakingId === id) {
+      stopSpeaking();
+      setSpeakingId(null);
+      return;
+    }
+    setSpeakingId(id);
+    speak(text);
+    setTimeout(() => setSpeakingId((cur) => (cur === id ? null : cur)), Math.min(30000, text.length * 60));
+  }
+
   async function handleSubmit(msg: PromptInputMessage) {
     const text = msg.text.trim();
     if (!text || isBusy) return;
@@ -169,7 +245,27 @@ function ChatWindow({
               <Message key={m.id} from={m.role}>
                 <MessageContent>
                   {m.role === "assistant" ? (
-                    <MessageResponse>{text}</MessageResponse>
+                    <>
+                      <MessageResponse>{text}</MessageResponse>
+                      {ttsSupported && text.trim() && (
+                        <button
+                          type="button"
+                          onClick={() => toggleSpeakMessage(m.id, text)}
+                          className="mt-2 inline-flex items-center gap-1 rounded-full border border-border/60 px-2 py-0.5 text-[11px] text-muted-foreground transition hover:text-foreground"
+                          aria-label={speakingId === m.id ? "Stop speaking" : "Speak this message"}
+                        >
+                          {speakingId === m.id ? (
+                            <>
+                              <VolumeX className="h-3 w-3" /> Stop
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 className="h-3 w-3" /> Listen
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </>
                   ) : (
                     <span className="whitespace-pre-wrap">{text}</span>
                   )}
@@ -202,7 +298,40 @@ function ChatWindow({
               onChange={(e) => setInput(e.target.value)}
               placeholder="Message Beacon…"
             />
-            <PromptInputFooter className="justify-end">
+            <PromptInputFooter className="justify-between">
+              <div className="flex items-center gap-1">
+                {voiceSupported && (
+                  <Button
+                    type="button"
+                    variant={isListening ? "default" : "ghost"}
+                    size="icon-sm"
+                    className="rounded-full h-9 w-9"
+                    onClick={toggleDictation}
+                    aria-label={isListening ? "Stop listening" : "Speak your message"}
+                    title={isListening ? "Stop listening" : "Speak your message"}
+                  >
+                    {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  </Button>
+                )}
+                {ttsSupported && (
+                  <Button
+                    type="button"
+                    variant={autoSpeak ? "default" : "ghost"}
+                    size="icon-sm"
+                    className="rounded-full h-9 w-9"
+                    onClick={() => {
+                      setAutoSpeak((v) => {
+                        if (v) stopSpeaking();
+                        return !v;
+                      });
+                    }}
+                    aria-label={autoSpeak ? "Disable spoken replies" : "Speak Beacon's replies"}
+                    title={autoSpeak ? "Auto-speak on" : "Auto-speak off"}
+                  >
+                    {autoSpeak ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                  </Button>
+                )}
+              </div>
               <PromptInputSubmit
                 size="icon-sm"
                 className="rounded-full h-9 w-9"
