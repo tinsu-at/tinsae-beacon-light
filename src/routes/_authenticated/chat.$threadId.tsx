@@ -298,7 +298,40 @@ function ChatWindow({
               onChange={(e) => setInput(e.target.value)}
               placeholder="Message Beacon…"
             />
-            <PromptInputFooter className="justify-end">
+            <PromptInputFooter className="justify-between">
+              <div className="flex items-center gap-1">
+                {voiceSupported && (
+                  <Button
+                    type="button"
+                    variant={isListening ? "default" : "ghost"}
+                    size="icon-sm"
+                    className="rounded-full h-9 w-9"
+                    onClick={toggleDictation}
+                    aria-label={isListening ? "Stop listening" : "Speak your message"}
+                    title={isListening ? "Stop listening" : "Speak your message"}
+                  >
+                    {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  </Button>
+                )}
+                {ttsSupported && (
+                  <Button
+                    type="button"
+                    variant={autoSpeak ? "default" : "ghost"}
+                    size="icon-sm"
+                    className="rounded-full h-9 w-9"
+                    onClick={() => {
+                      setAutoSpeak((v) => {
+                        if (v) stopSpeaking();
+                        return !v;
+                      });
+                    }}
+                    aria-label={autoSpeak ? "Disable spoken replies" : "Speak Beacon's replies"}
+                    title={autoSpeak ? "Auto-speak on" : "Auto-speak off"}
+                  >
+                    {autoSpeak ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+                  </Button>
+                )}
+              </div>
               <PromptInputSubmit
                 size="icon-sm"
                 className="rounded-full h-9 w-9"
