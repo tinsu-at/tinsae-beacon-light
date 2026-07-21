@@ -21,7 +21,16 @@ import {
   type PromptInputMessage,
 } from "@/components/ai-elements/prompt-input";
 import { Shimmer } from "@/components/ai-elements/shimmer";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  isSpeechRecognitionSupported,
+  isSpeechSynthesisSupported,
+  startDictation,
+  speak,
+  stopSpeaking,
+  type DictationHandle,
+} from "@/lib/voice";
 import { toast } from "sonner";
 
 const searchSchema = z.object({
