@@ -108,6 +108,12 @@ function ChatWindow({
 }) {
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const dictationRef = useRef<DictationHandle | null>(null);
+  const [isListening, setIsListening] = useState(false);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
+  const [autoSpeak, setAutoSpeak] = useState(false);
+  const voiceSupported = isSpeechRecognitionSupported();
+  const ttsSupported = isSpeechSynthesisSupported();
 
   const transport = useMemo(
     () =>
