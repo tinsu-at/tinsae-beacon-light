@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
+const streamdownPlugins = { code };
 import { Copy, Download, Play, Square, Search, Code2 } from "lucide-react";
 import { toast } from "sonner";
 import { SNIPPETS, type Snippet } from "@/lib/dev-snippets";
@@ -210,7 +211,7 @@ function SnippetView({ snippet }: { snippet: Snippet }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="overflow-hidden rounded-2xl border border-border">
-          <Streamdown plugins={[code()]}>{fence}</Streamdown>
+          <Streamdown plugins={streamdownPlugins}>{fence}</Streamdown>
         </div>
         {snippet.runnable && (
           <div>
