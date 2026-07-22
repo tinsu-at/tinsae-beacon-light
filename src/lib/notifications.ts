@@ -16,9 +16,12 @@ export type NotifPref = {
   time: string; // "HH:mm"
   title: string;
   body: string;
+  sound?: boolean;
+  vibrate?: boolean;
 };
 
 export type NotifPrefs = Record<NotifKey, NotifPref>;
+
 
 export const DEFAULT_NOTIF_PREFS: NotifPrefs = {
   morningBriefing: {
@@ -100,32 +103,43 @@ function nextFireMs(hhmm: string): number {
   return t.getTime() - now.getTime();
 }
 
-function fire(key: NotifKey, pref: NotifPref) {
+function routeFor(key: NotifKey): string {
+  return key === "morningBriefing" || key === "eveningReflection" || key === "dailyReview"
+    ? "/chat"
+    : key === "habitReminder"
+      ? "/habits"
+      : key === "journalReminder"
+        ? "/journal"
+        : "/dashboard";
+}
+
+export function fireNotification(key: NotifKey, pref: NotifPref) {
   if (typeof window === "undefined" || !("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
   try {
+    if (pref.vibrate && "vibrate" in navigator) {
+      try { navigator.vibrate?.([80, 40, 80]); } catch { /* noop */ }
+    }
     const n = new Notification(pref.title, {
       body: pref.body,
       icon: "/icon-512.png",
       badge: "/icon-512.png",
       tag: `beacon-${key}`,
+      silent: pref.sound === false,
     });
     n.onclick = () => {
       window.focus();
-      const route =
-        key === "morningBriefing" || key === "eveningReflection" || key === "dailyReview"
-          ? "/chat"
-          : key === "habitReminder"
-            ? "/habits"
-            : key === "journalReminder"
-              ? "/journal"
-              : "/dashboard";
-      window.location.href = route;
+      window.location.href = routeFor(key);
     };
   } catch {
     // ignore
   }
 }
+
+function fire(key: NotifKey, pref: NotifPref) {
+  fireNotification(key, pref);
+}
+
 
 export function scheduleAll(prefs: NotifPrefs = loadNotifPrefs()) {
   if (typeof window === "undefined") return;

@@ -13,8 +13,9 @@ export default defineConfig({
       strategies: "generateSW",
       manifest: false, // served from public/manifest.webmanifest
       workbox: {
-        navigateFallback: null,
-        globPatterns: ["**/*.{js,css,ico,png,svg,woff2}"],
+        navigateFallback: "/offline.html",
+        navigateFallbackDenylist: [/^\/api\//, /^\/~/],
+        globPatterns: ["**/*.{js,css,ico,png,svg,webp,woff2,html,webmanifest}"],
         cleanupOutdatedCaches: true,
         skipWaiting: true,
         clientsClaim: true,
@@ -35,7 +36,20 @@ export default defineConfig({
             handler: "CacheFirst",
             options: {
               cacheName: "beacon-assets",
-              expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              expiration: { maxEntries: 120, maxAgeSeconds: 60 * 60 * 24 * 30 },
+            },
+          },
+          {
+            urlPattern: ({ url }) => url.origin === "https://fonts.googleapis.com",
+            handler: "StaleWhileRevalidate",
+            options: { cacheName: "beacon-google-fonts-stylesheets" },
+          },
+          {
+            urlPattern: ({ url }) => url.origin === "https://fonts.gstatic.com",
+            handler: "CacheFirst",
+            options: {
+              cacheName: "beacon-google-fonts-webfonts",
+              expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
             },
           },
         ],
@@ -43,3 +57,4 @@ export default defineConfig({
     }),
   ],
 });
+

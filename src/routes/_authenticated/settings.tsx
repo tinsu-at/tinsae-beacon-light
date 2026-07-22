@@ -10,16 +10,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Moon, Sun, BellRing } from "lucide-react";
+import { Moon, Sun, BellRing, Send, Volume2, VibrateIcon, ChevronDown } from "lucide-react";
 import {
   DEFAULT_NOTIF_PREFS,
   loadNotifPrefs,
   saveNotifPrefs,
   requestNotifPermission,
   notifPermission,
+  fireNotification,
   type NotifKey,
   type NotifPrefs,
 } from "@/lib/notifications";
+import {
+  getPushStatus,
+  subscribePush,
+  unsubscribePush,
+  isPushConfigured,
+  type PushStatus,
+} from "@/lib/push";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — Beacon" }] }),
@@ -42,6 +50,8 @@ function SettingsPage() {
   const [name, setName] = useState("");
   const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_NOTIF_PREFS);
   const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [push, setPush] = useState<PushStatus>({ state: "prompt" });
+  const [expanded, setExpanded] = useState<NotifKey | null>(null);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -59,6 +69,7 @@ function SettingsPage() {
   useEffect(() => {
     setPrefs(loadNotifPrefs());
     setPermission(notifPermission());
+    getPushStatus().then(setPush).catch(() => {});
   }, []);
 
   async function saveProfile(e: React.FormEvent) {
@@ -85,6 +96,31 @@ function SettingsPage() {
     } else {
       toast.error("Notification permission denied");
     }
+  }
+
+  async function handleSubscribe() {
+    const s = await subscribePush();
+    setPush(s);
+    if (s.state === "subscribed") toast.success("Push notifications enabled");
+    else if (s.state === "denied") toast.error("Permission denied in browser");
+    else if (s.state === "unsupported") toast.error("Push not supported on this device");
+    else if (s.state === "not-configured")
+      toast.error("Push server not configured (VITE_VAPID_PUBLIC_KEY missing)");
+  }
+
+  async function handleUnsubscribe() {
+    await unsubscribePush();
+    setPush({ state: "prompt" });
+    toast.success("Push disabled");
+  }
+
+  function testNotification(key: NotifKey) {
+    if (permission !== "granted") {
+      toast.error("Enable browser notifications first");
+      return;
+    }
+    fireNotification(key, prefs[key]);
+    toast.success("Test sent");
   }
 
   return (
@@ -163,32 +199,125 @@ function SettingsPage() {
             </Button>
           </div>
 
-          {(Object.keys(NOTIF_LABELS) as NotifKey[]).map((key) => (
-            <div key={key} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border p-4">
-              <div className="min-w-0">
-                <p className="font-medium">{NOTIF_LABELS[key].label}</p>
-                <p className="text-xs text-muted-foreground">{NOTIF_LABELS[key].desc}</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <Input
-                  type="time"
-                  value={prefs[key].time}
-                  onChange={(e) => updatePref(key, { time: e.target.value })}
-                  className="h-9 w-28"
-                />
-                <Switch
-                  checked={prefs[key].enabled}
-                  onCheckedChange={(v) => updatePref(key, { enabled: v })}
-                />
-              </div>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border p-4">
+            <div className="min-w-0">
+              <p className="font-medium">Push notifications (PWA)</p>
+              <p className="text-xs text-muted-foreground">
+                {push.state === "subscribed"
+                  ? "Subscribed. Beacon can reach you even when the app is closed."
+                  : push.state === "unsupported"
+                    ? "Not supported on this device or browser."
+                    : push.state === "not-configured"
+                      ? "Push server not configured. Set VITE_VAPID_PUBLIC_KEY to enable."
+                      : push.state === "denied"
+                        ? "Blocked — allow notifications in browser site settings."
+                        : "Register this device so Beacon can push reminders through the service worker."}
+              </p>
             </div>
-          ))}
+            {push.state === "subscribed" ? (
+              <Button size="sm" variant="outline" className="rounded-full" onClick={handleUnsubscribe}>
+                Unsubscribe
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                className="rounded-full"
+                onClick={handleSubscribe}
+                disabled={
+                  push.state === "unsupported" ||
+                  push.state === "not-configured" ||
+                  !isPushConfigured()
+                }
+              >
+                Register
+              </Button>
+            )}
+          </div>
+
+          {(Object.keys(NOTIF_LABELS) as NotifKey[]).map((key) => {
+            const isOpen = expanded === key;
+            const pref = prefs[key];
+            return (
+              <div key={key} className="rounded-2xl border border-border">
+                <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+                  <div className="min-w-0">
+                    <p className="font-medium">{NOTIF_LABELS[key].label}</p>
+                    <p className="text-xs text-muted-foreground">{NOTIF_LABELS[key].desc}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Input
+                      type="time"
+                      value={pref.time}
+                      onChange={(e) => updatePref(key, { time: e.target.value })}
+                      className="h-9 w-28"
+                    />
+                    <Switch
+                      checked={pref.enabled}
+                      onCheckedChange={(v) => updatePref(key, { enabled: v })}
+                    />
+                    <button
+                      onClick={() => setExpanded(isOpen ? null : key)}
+                      aria-label="Expand"
+                      className="grid h-8 w-8 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-accent"
+                    >
+                      <ChevronDown className={`h-4 w-4 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                    </button>
+                  </div>
+                </div>
+                {isOpen && (
+                  <div className="space-y-3 border-t border-border p-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Title</Label>
+                      <Input
+                        value={pref.title}
+                        onChange={(e) => updatePref(key, { title: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Message</Label>
+                      <Input
+                        value={pref.body}
+                        onChange={(e) => updatePref(key, { body: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-4">
+                      <label className="flex items-center gap-2 text-xs">
+                        <Volume2 className="h-3.5 w-3.5" />
+                        Sound
+                        <Switch
+                          checked={pref.sound !== false}
+                          onCheckedChange={(v) => updatePref(key, { sound: v })}
+                        />
+                      </label>
+                      <label className="flex items-center gap-2 text-xs">
+                        <VibrateIcon className="h-3.5 w-3.5" />
+                        Vibrate
+                        <Switch
+                          checked={pref.vibrate === true}
+                          onCheckedChange={(v) => updatePref(key, { vibrate: v })}
+                        />
+                      </label>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => testNotification(key)}
+                        className="ml-auto rounded-full gap-2"
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                        Test
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
           <p className="text-xs text-muted-foreground">
-            Reminders run locally on this device while Beacon is open or in the background. Keep the app installed for the most reliable delivery.
+            Local reminders run on this device while Beacon is installed or open. Register push
+            to also receive them when Beacon is closed.
           </p>
         </CardContent>
       </Card>
     </div>
   );
 }
-
