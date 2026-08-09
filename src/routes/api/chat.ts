@@ -178,8 +178,72 @@ export const Route = createFileRoute("/api/chat")({
           }
         } catch {}
 
+        // Live state: goals, active habits, unfinished tasks
+        let stateContext = "";
+        try {
+          const today = new Date().toISOString().slice(0, 10);
+          const [goalsRes, habitsRes, tasksRes, logsRes] = await Promise.all([
+            supabase
+              .from("goals")
+              .select("title, category, deadline, completed")
+              .eq("completed", false)
+              .limit(10),
+            supabase
+              .from("habits")
+              .select("id, name")
+              .eq("archived", false)
+              .limit(20),
+            supabase
+              .from("tasks")
+              .select("title, priority, due_date")
+              .eq("completed", false)
+              .order("due_date", { ascending: true, nullsFirst: false })
+              .limit(10),
+            supabase.from("habit_logs").select("habit_id").eq("log_date", today),
+          ]);
+          const doneToday = new Set((logsRes.data ?? []).map((l) => l.habit_id));
+          const parts: string[] = [];
+          if (goalsRes.data?.length) {
+            parts.push(
+              "Active goals:\n" +
+                goalsRes.data
+                  .map(
+                    (g) =>
+                      `- ${g.title} (${g.category}${g.deadline ? `, due ${g.deadline}` : ""})`,
+                  )
+                  .join("\n"),
+            );
+          }
+          if (habitsRes.data?.length) {
+            parts.push(
+              "Active habits (✓ = already logged today):\n" +
+                habitsRes.data
+                  .map((h) => `- ${doneToday.has(h.id) ? "✓" : "•"} ${h.name}`)
+                  .join("\n"),
+            );
+          }
+          if (tasksRes.data?.length) {
+            parts.push(
+              "Unfinished tasks:\n" +
+                tasksRes.data
+                  .map(
+                    (t) =>
+                      `- ${t.title} [${t.priority}${t.due_date ? `, due ${t.due_date}` : ""}]`,
+                  )
+                  .join("\n"),
+            );
+          }
+          if (parts.length) {
+            stateContext =
+              "\n\nCurrent state of the user's system (real data — use it, never invent it):\n" +
+              parts.join("\n\n");
+          }
+        } catch (e) {
+          console.warn("[chat] state retrieval failed", e);
+        }
+
         const nowLine = `\n\nCurrent local date/time reference: ${new Date().toISOString()}`;
-        const composedSystem = SYSTEM_PROMPT + nowLine + memoryContext + recentContext;
+        const composedSystem = SYSTEM_PROMPT + nowLine + memoryContext + stateContext + recentContext;
 
         const gateway = createLovableAiGatewayProvider(LOVABLE_API_KEY);
         const model = gateway("google/gemini-3.5-flash");

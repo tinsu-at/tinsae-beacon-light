@@ -81,11 +81,11 @@ function MemoryPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 md:px-6">
       <div className="flex items-center gap-3">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl gradient-forest text-primary-foreground shadow-soft">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl gradient-forest text-primary-foreground shadow-soft">
           <Brain className="h-5 w-5" />
         </div>
-        <div>
-          <h1 className="font-serif text-3xl font-semibold">Beacon's memory</h1>
+        <div className="min-w-0">
+          <h1 className="font-serif text-2xl font-semibold sm:text-3xl">Beacon's memory</h1>
           <p className="text-sm text-muted-foreground">
             Long-term facts Beacon uses to personalize every reply.
           </p>

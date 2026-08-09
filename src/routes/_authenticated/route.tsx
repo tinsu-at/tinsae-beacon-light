@@ -9,6 +9,9 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/lib/theme";
 import { Moon, Sun, LogOut } from "lucide-react";
 import { BeaconReflection } from "@/components/beacon-reflection";
+import { OfflineBanner } from "@/components/offline-banner";
+import { toast } from "sonner";
+import { notifPermission, requestNotifPermission, scheduleAll } from "@/lib/notifications";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -28,6 +31,33 @@ function Shell() {
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth" });
   }, [user, loading, navigate]);
+
+  // Ask for notification permission once, on first launch.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem("beacon-notif-primed") === "1") return;
+    if (notifPermission() !== "default") return;
+    const t = setTimeout(() => {
+      toast("Turn on reminders?", {
+        description: "Beacon can nudge you for habits, tasks and daily reflection.",
+        duration: 15000,
+        action: {
+          label: "Enable",
+          onClick: () => {
+            localStorage.setItem("beacon-notif-primed", "1");
+            void requestNotifPermission().then((p) => {
+              if (p === "granted") {
+                scheduleAll();
+                toast.success("Reminders enabled");
+              }
+            });
+          },
+        },
+        onDismiss: () => localStorage.setItem("beacon-notif-primed", "1"),
+      });
+    }, 2500);
+    return () => clearTimeout(t);
+  }, []);
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -53,6 +83,7 @@ function Shell() {
               </Button>
             </div>
           </header>
+          <OfflineBanner />
           <main className="flex-1 pb-24 md:pb-0">
             <Outlet />
           </main>

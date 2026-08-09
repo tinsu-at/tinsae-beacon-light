@@ -9,7 +9,10 @@ export type NotifKey =
   | "habitReminder"
   | "journalReminder"
   | "confidenceChallenge"
-  | "dailyReview";
+  | "dailyReview"
+  | "taskReminder"
+  | "goalReminder"
+  | "weeklyReview";
 
 export type NotifPref = {
   enabled: boolean;
@@ -18,6 +21,8 @@ export type NotifPref = {
   body: string;
   sound?: boolean;
   vibrate?: boolean;
+  /** 0=Sunday … 6=Saturday. When set, the reminder fires weekly on that day. */
+  day?: number;
 };
 
 export type NotifPrefs = Record<NotifKey, NotifPref>;
@@ -60,6 +65,25 @@ export const DEFAULT_NOTIF_PREFS: NotifPrefs = {
     title: "Daily review",
     body: "What went well? What can you improve tomorrow?",
   },
+  taskReminder: {
+    enabled: true,
+    time: "10:00",
+    title: "Task check",
+    body: "What is the one task that must not slip today?",
+  },
+  goalReminder: {
+    enabled: true,
+    time: "16:00",
+    title: "Goal progress",
+    body: "Move one goal forward before the day closes.",
+  },
+  weeklyReview: {
+    enabled: true,
+    time: "19:00",
+    day: 0,
+    title: "Weekly review",
+    body: "Review the week: wins, misses, and next week's focus.",
+  },
 };
 
 const KEY = "beacon-notif-prefs-v2";
@@ -94,23 +118,39 @@ export function notifPermission(): NotificationPermission {
 
 const timers = new Map<NotifKey, ReturnType<typeof setTimeout>>();
 
-function nextFireMs(hhmm: string): number {
+function nextFireMs(hhmm: string, day?: number): number {
   const [h, m] = hhmm.split(":").map(Number);
   const now = new Date();
   const t = new Date();
   t.setHours(h, m, 0, 0);
-  if (t.getTime() <= now.getTime()) t.setDate(t.getDate() + 1);
+  if (typeof day === "number") {
+    let delta = (day - t.getDay() + 7) % 7;
+    if (delta === 0 && t.getTime() <= now.getTime()) delta = 7;
+    t.setDate(t.getDate() + delta);
+  } else if (t.getTime() <= now.getTime()) {
+    t.setDate(t.getDate() + 1);
+  }
   return t.getTime() - now.getTime();
 }
 
 function routeFor(key: NotifKey): string {
-  return key === "morningBriefing" || key === "eveningReflection" || key === "dailyReview"
-    ? "/chat"
-    : key === "habitReminder"
-      ? "/habits"
-      : key === "journalReminder"
-        ? "/journal"
-        : "/dashboard";
+  switch (key) {
+    case "morningBriefing":
+    case "eveningReflection":
+    case "dailyReview":
+    case "weeklyReview":
+      return "/chat";
+    case "habitReminder":
+      return "/habits";
+    case "journalReminder":
+      return "/journal";
+    case "taskReminder":
+      return "/tasks";
+    case "goalReminder":
+      return "/goals";
+    default:
+      return "/dashboard";
+  }
 }
 
 export function fireNotification(key: NotifKey, pref: NotifPref) {
@@ -149,10 +189,10 @@ export function scheduleAll(prefs: NotifPrefs = loadNotifPrefs()) {
     const pref = prefs[key];
     if (!pref.enabled) continue;
     const arm = () => {
-      const delay = nextFireMs(pref.time);
+      const delay = nextFireMs(pref.time, pref.day);
       const id = setTimeout(() => {
         fire(key, pref);
-        arm(); // schedule next day
+        arm(); // re-arm for the next occurrence
       }, delay);
       timers.set(key, id);
     };

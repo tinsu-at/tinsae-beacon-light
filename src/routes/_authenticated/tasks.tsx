@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Trash2, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { writeOrQueue } from "@/lib/offline";
 
 type Task = {
   id: string;
@@ -50,27 +51,51 @@ function TasksPage() {
     },
   });
 
+  function patchCache(fn: (list: Task[]) => Task[]) {
+    qc.setQueryData<Task[]>(["tasks", user?.id], (old) => fn(old ?? []));
+  }
+
   async function toggle(t: Task) {
-    const { error } = await supabase
-      .from("tasks")
-      .update({ completed: !t.completed, completed_at: !t.completed ? new Date().toISOString() : null })
-      .eq("id", t.id);
-    if (error) toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["tasks"] });
-    qc.invalidateQueries({ queryKey: ["top-task"] });
+    patchCache((list) => list.map((x) => (x.id === t.id ? { ...x, completed: !t.completed } : x)));
+    try {
+      const queued = await writeOrQueue({
+        label: `Task "${t.title}"`,
+        table: "tasks",
+        type: "update",
+        rowId: t.id,
+        values: {
+          completed: !t.completed,
+          completed_at: !t.completed ? new Date().toISOString() : null,
+        },
+      });
+      if (queued) toast.success("Saved offline — will sync later");
+      else {
+        qc.invalidateQueries({ queryKey: ["tasks"] });
+        qc.invalidateQueries({ queryKey: ["top-task"] });
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not update task");
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+    }
   }
 
   async function remove(id: string) {
-    const { error } = await supabase.from("tasks").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["tasks"] });
+    patchCache((list) => list.filter((x) => x.id !== id));
+    try {
+      const queued = await writeOrQueue({ label: "Delete task", table: "tasks", type: "delete", rowId: id });
+      if (queued) toast.success("Deleted offline — will sync later");
+      else qc.invalidateQueries({ queryKey: ["tasks"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not delete task");
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+    }
   }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-8 md:px-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-3xl font-semibold">Daily planner</h1>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <div className="min-w-0">
+          <h1 className="font-serif text-2xl font-semibold sm:text-3xl">Daily planner</h1>
           <p className="text-sm text-muted-foreground">Create today. Ship today.</p>
         </div>
         <Dialog
@@ -81,8 +106,9 @@ function TasksPage() {
           }}
         >
           <DialogTrigger asChild>
-            <Button className="rounded-full">
-              <Plus className="mr-1 h-4 w-4" /> New task
+            <Button className="shrink-0 rounded-full">
+              <Plus className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">New task</span>
             </Button>
           </DialogTrigger>
           <DialogContent className="rounded-3xl">
@@ -170,12 +196,20 @@ function TaskForm({ task, onDone }: { task: Task | null; onDone: () => void }) {
       due_date: dueDate || null,
       user_id: user.id,
     };
-    const { error } = task
-      ? await supabase.from("tasks").update(payload).eq("id", task.id)
-      : await supabase.from("tasks").insert(payload);
-    if (error) return toast.error(error.message);
-    toast.success(task ? "Task updated" : "Task added");
-    onDone();
+    try {
+      const queued = task
+        ? await writeOrQueue({ label: "Update task", table: "tasks", type: "update", rowId: task.id, values: payload })
+        : await writeOrQueue({
+            label: "New task",
+            table: "tasks",
+            type: "insert",
+            values: { ...payload, id: crypto.randomUUID() },
+          });
+      toast.success(queued ? "Saved offline — will sync later" : task ? "Task updated" : "Task added");
+      onDone();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save task");
+    }
   }
 
   return (

@@ -37,11 +37,17 @@ export const Route = createFileRoute("/_authenticated/settings")({
 const NOTIF_LABELS: Record<NotifKey, { label: string; desc: string }> = {
   morningBriefing: { label: "Morning briefing", desc: "Plan the day with Beacon." },
   confidenceChallenge: { label: "Confidence challenge", desc: "One brave act per day." },
+  taskReminder: { label: "Task reminder", desc: "Protect today's most important task." },
   habitReminder: { label: "Habit reminder", desc: "Log your habits, keep the streak." },
+  goalReminder: { label: "Goal reminder", desc: "Move one goal forward today." },
   journalReminder: { label: "Journal nudge", desc: "Three lines about today." },
   eveningReflection: { label: "Evening reflection", desc: "The Beacon Principle check-in." },
   dailyReview: { label: "Daily review", desc: "Wins, distractions, lessons." },
+  weeklyReview: { label: "Weekly review", desc: "Zoom out once a week." },
 };
+
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 
 function SettingsPage() {
   const { user } = useAuth();
@@ -280,6 +286,25 @@ function SettingsPage() {
                         onChange={(e) => updatePref(key, { body: e.target.value })}
                       />
                     </div>
+                    {typeof pref.day === "number" && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Day of week</Label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {DAYS.map((d, i) => (
+                            <Button
+                              key={d}
+                              type="button"
+                              size="sm"
+                              variant={pref.day === i ? "default" : "outline"}
+                              className="rounded-full px-3"
+                              onClick={() => updatePref(key, { day: i })}
+                            >
+                              {d}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="flex flex-wrap items-center gap-4">
                       <label className="flex items-center gap-2 text-xs">
                         <Volume2 className="h-3.5 w-3.5" />
