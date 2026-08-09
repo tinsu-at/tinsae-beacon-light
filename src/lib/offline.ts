@@ -17,6 +17,9 @@ export type OutboxOp =
       match: Record<string, string>;
     };
 
+type DistributiveOmit<T, K extends keyof never> = T extends unknown ? Omit<T, K> : never;
+export type NewOutboxOp = DistributiveOmit<OutboxOp, "id" | "at">;
+
 const KEY = "beacon-outbox-v1";
 
 type State = {
@@ -66,7 +69,7 @@ function writeQueue(q: OutboxOp[]) {
   emit();
 }
 
-export function enqueue(op: Omit<OutboxOp, "id" | "at">) {
+export function enqueue(op: NewOutboxOp) {
   const full = { ...op, id: crypto.randomUUID(), at: Date.now() } as OutboxOp;
   const q = readQueue();
   // Collapse repeated updates to the same row+table (last write wins).
@@ -110,7 +113,7 @@ async function runOp(op: OutboxOp) {
  * Run a write immediately when online, otherwise store it in the outbox.
  * Returns true when the write was queued for later.
  */
-export async function writeOrQueue(op: Omit<OutboxOp, "id" | "at">): Promise<boolean> {
+export async function writeOrQueue(op: NewOutboxOp): Promise<boolean> {
   if (!isOnline()) {
     enqueue(op);
     return true;
