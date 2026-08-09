@@ -8,7 +8,12 @@ export function OfflineBanner() {
   const qc = useQueryClient();
   const [s, setS] = useState(offlineState());
 
-  useEffect(() => subscribeOffline(setS), []);
+  useEffect(() => {
+    const unsub = subscribeOffline(setS);
+    return () => {
+      unsub();
+    };
+  }, []);
 
   useEffect(() => {
     return initOfflineSync(({ synced, failed }) => {
