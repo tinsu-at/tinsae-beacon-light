@@ -39,11 +39,11 @@ function DeveloperPage() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 md:px-6">
       <header className="flex items-center gap-3">
-        <div className="grid h-11 w-11 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-soft">
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-soft">
           <Code2 className="h-5 w-5" />
         </div>
-        <div>
-          <h1 className="font-serif text-3xl font-semibold">Developer</h1>
+        <div className="min-w-0">
+          <h1 className="font-serif text-2xl font-semibold sm:text-3xl">Developer</h1>
           <p className="text-sm text-muted-foreground">
             Snippets you can copy, download, or run in a sandbox.
           </p>

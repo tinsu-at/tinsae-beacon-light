@@ -78,15 +78,16 @@ function GoalsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-8 md:px-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-serif text-3xl font-semibold">Goals</h1>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <div className="min-w-0">
+          <h1 className="font-serif text-2xl font-semibold sm:text-3xl">Goals</h1>
           <p className="text-sm text-muted-foreground">Where you're headed. Short and long.</p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="rounded-full">
-              <Plus className="mr-1 h-4 w-4" /> New goal
+            <Button className="shrink-0 rounded-full">
+              <Plus className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">New goal</span>
             </Button>
           </DialogTrigger>
           <DialogContent className="rounded-3xl">
@@ -222,7 +223,7 @@ function GoalForm({ onDone }: { onDone: () => void }) {
         <Label>Description</Label>
         <Textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label>Category</Label>
           <Select value={category} onValueChange={(v) => setCategory(v as "short" | "long")}>

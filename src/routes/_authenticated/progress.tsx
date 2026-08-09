@@ -45,7 +45,7 @@ function ProgressPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-8 md:px-6">
       <div>
-        <h1 className="font-serif text-3xl font-semibold">Progress</h1>
+        <h1 className="font-serif text-2xl font-semibold sm:text-3xl">Progress</h1>
         <p className="text-sm text-muted-foreground">Momentum, one day at a time.</p>
       </div>
 
