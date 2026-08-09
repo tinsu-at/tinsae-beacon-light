@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import { formatLongDate, todayISO } from "@/lib/beacon-data";
 import { Trash2 } from "lucide-react";
+import { writeOrQueue } from "@/lib/offline";
 
 type Entry = { id: string; title: string | null; content: string; mood: string | null; entry_date: string; created_at: string };
 
@@ -42,34 +43,60 @@ function JournalPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!user || !content.trim()) return;
-    const { error } = await supabase.from("journal_entries").insert({
+    const row = {
+      id: crypto.randomUUID(),
       user_id: user.id,
       title: title || null,
       content,
       mood: mood || null,
       entry_date: todayISO(),
-    });
-    if (error) return toast.error(error.message);
+    };
+    qc.setQueryData<Entry[]>(["journal", user.id], (old) => [
+      { ...row, created_at: new Date().toISOString() } as Entry,
+      ...(old ?? []),
+    ]);
     setTitle(""); setContent(""); setMood("");
-    toast.success("Entry saved");
-    qc.invalidateQueries({ queryKey: ["journal"] });
+    try {
+      const queued = await writeOrQueue({
+        label: "Journal entry",
+        table: "journal_entries",
+        type: "insert",
+        values: row,
+      });
+      toast.success(queued ? "Saved offline — will sync later" : "Entry saved");
+      if (!queued) qc.invalidateQueries({ queryKey: ["journal"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save entry");
+      qc.invalidateQueries({ queryKey: ["journal"] });
+    }
   }
 
   async function remove(id: string) {
-    await supabase.from("journal_entries").delete().eq("id", id);
-    qc.invalidateQueries({ queryKey: ["journal"] });
+    qc.setQueryData<Entry[]>(["journal", user?.id], (old) => (old ?? []).filter((e) => e.id !== id));
+    try {
+      const queued = await writeOrQueue({
+        label: "Delete journal entry",
+        table: "journal_entries",
+        type: "delete",
+        rowId: id,
+      });
+      if (!queued) qc.invalidateQueries({ queryKey: ["journal"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not delete entry");
+      qc.invalidateQueries({ queryKey: ["journal"] });
+    }
   }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 px-4 py-8 md:px-6">
       <div>
-        <h1 className="font-serif text-3xl font-semibold">Journal</h1>
+        <h1 className="font-serif text-2xl font-semibold sm:text-3xl">Journal</h1>
         <p className="text-sm text-muted-foreground">{formatLongDate()}</p>
       </div>
 
-      <Card className="rounded-3xl p-6 shadow-elegant">
+      <Card className="rounded-3xl p-4 shadow-elegant sm:p-6">
         <form onSubmit={submit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Title (optional)</Label>
               <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="A word for today..." />
