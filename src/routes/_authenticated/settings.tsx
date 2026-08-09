@@ -286,6 +286,25 @@ function SettingsPage() {
                         onChange={(e) => updatePref(key, { body: e.target.value })}
                       />
                     </div>
+                    {typeof pref.day === "number" && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Day of week</Label>
+                        <div className="flex flex-wrap gap-1.5">
+                          {DAYS.map((d, i) => (
+                            <Button
+                              key={d}
+                              type="button"
+                              size="sm"
+                              variant={pref.day === i ? "default" : "outline"}
+                              className="rounded-full px-3"
+                              onClick={() => updatePref(key, { day: i })}
+                            >
+                              {d}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                     <div className="flex flex-wrap items-center gap-4">
                       <label className="flex items-center gap-2 text-xs">
                         <Volume2 className="h-3.5 w-3.5" />
