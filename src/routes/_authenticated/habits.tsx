@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Check, Flame, Plus, Trash2 } from "lucide-react";
 import { todayISO } from "@/lib/beacon-data";
+import { writeOrQueue } from "@/lib/offline";
 
 type Habit = { id: string; name: string; icon: string | null; is_default: boolean; archived: boolean };
 type Log = { habit_id: string; log_date: string };
@@ -76,46 +77,91 @@ function HabitsPage() {
 
   const todayLogs = useMemo(() => new Set(logs.filter((l) => l.log_date === today).map((l) => l.habit_id)), [logs, today]);
 
+  function patchLogs(fn: (list: Log[]) => Log[]) {
+    qc.setQueryData<Log[]>(["habit-logs-30", user?.id], (old) => fn(old ?? []));
+  }
+
   async function toggleToday(habit: Habit) {
     if (!user) return;
-    if (todayLogs.has(habit.id)) {
-      const { error } = await supabase
-        .from("habit_logs")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("habit_id", habit.id)
-        .eq("log_date", today);
-      if (error) toast.error(error.message);
-    } else {
-      const { error } = await supabase
-        .from("habit_logs")
-        .insert({ user_id: user.id, habit_id: habit.id, log_date: today });
-      if (error) toast.error(error.message);
+    const wasDone = todayLogs.has(habit.id);
+    patchLogs((list) =>
+      wasDone
+        ? list.filter((l) => !(l.habit_id === habit.id && l.log_date === today))
+        : [...list, { habit_id: habit.id, log_date: today }],
+    );
+    try {
+      const queued = wasDone
+        ? await writeOrQueue({
+            label: `Un-log ${habit.name}`,
+            table: "habit_logs",
+            type: "deleteWhere",
+            match: { user_id: user.id, habit_id: habit.id, log_date: today },
+          })
+        : await writeOrQueue({
+            label: `Log ${habit.name}`,
+            table: "habit_logs",
+            type: "insert",
+            values: { id: crypto.randomUUID(), user_id: user.id, habit_id: habit.id, log_date: today },
+          });
+      if (queued) toast.success("Saved offline — will sync later");
+      else {
+        qc.invalidateQueries({ queryKey: ["habit-logs-30"] });
+        qc.invalidateQueries({ queryKey: ["habit-progress"] });
+        qc.invalidateQueries({ queryKey: ["weekly-streak"] });
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not update habit");
+      qc.invalidateQueries({ queryKey: ["habit-logs-30"] });
     }
-    qc.invalidateQueries({ queryKey: ["habit-logs-30"] });
-    qc.invalidateQueries({ queryKey: ["habit-progress"] });
-    qc.invalidateQueries({ queryKey: ["weekly-streak"] });
   }
 
   async function addHabit(e: React.FormEvent) {
     e.preventDefault();
     if (!user || !newName.trim()) return;
-    const { error } = await supabase.from("habits").insert({ user_id: user.id, name: newName.trim() });
-    if (error) return toast.error(error.message);
+    const id = crypto.randomUUID();
+    const name = newName.trim();
+    qc.setQueryData<Habit[]>(["habits", user.id], (old) => [
+      ...(old ?? []),
+      { id, name, icon: null, is_default: false, archived: false },
+    ]);
     setNewName("");
-    qc.invalidateQueries({ queryKey: ["habits"] });
+    try {
+      const queued = await writeOrQueue({
+        label: `New habit ${name}`,
+        table: "habits",
+        type: "insert",
+        values: { id, user_id: user.id, name },
+      });
+      if (queued) toast.success("Saved offline — will sync later");
+      else qc.invalidateQueries({ queryKey: ["habits"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not add habit");
+      qc.invalidateQueries({ queryKey: ["habits"] });
+    }
   }
 
   async function removeHabit(id: string) {
-    const { error } = await supabase.from("habits").update({ archived: true }).eq("id", id);
-    if (error) return toast.error(error.message);
-    qc.invalidateQueries({ queryKey: ["habits"] });
+    qc.setQueryData<Habit[]>(["habits", user?.id], (old) => (old ?? []).filter((h) => h.id !== id));
+    try {
+      const queued = await writeOrQueue({
+        label: "Archive habit",
+        table: "habits",
+        type: "update",
+        rowId: id,
+        values: { archived: true },
+      });
+      if (queued) toast.success("Saved offline — will sync later");
+      else qc.invalidateQueries({ queryKey: ["habits"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not remove habit");
+      qc.invalidateQueries({ queryKey: ["habits"] });
+    }
   }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-8 md:px-6">
       <div>
-        <h1 className="font-serif text-3xl font-semibold">Habits</h1>
+        <h1 className="font-serif text-2xl font-semibold sm:text-3xl">Habits</h1>
         <p className="text-sm text-muted-foreground">Small reps. Compound results.</p>
       </div>
 
@@ -125,8 +171,9 @@ function HabitsPage() {
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
         />
-        <Button type="submit" className="rounded-full">
-          <Plus className="mr-1 h-4 w-4" /> Add
+        <Button type="submit" className="shrink-0 rounded-full">
+          <Plus className="h-4 w-4 sm:mr-1" />
+          <span className="hidden sm:inline">Add</span>
         </Button>
       </form>
 
@@ -138,7 +185,7 @@ function HabitsPage() {
               <button
                 aria-label={done ? "Mark as not done" : "Mark done"}
                 onClick={() => toggleToday(h)}
-                className={`grid h-11 w-11 place-items-center rounded-xl transition ${
+                className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl transition ${
                   done
                     ? "bg-primary text-primary-foreground"
                     : "bg-beige text-primary hover:bg-accent"
@@ -146,8 +193,8 @@ function HabitsPage() {
               >
                 <Check className="h-5 w-5" />
               </button>
-              <div className="flex-1">
-                <p className="font-medium">{h.name}</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{h.name}</p>
                 <div className="mt-1 flex items-center gap-2">
                   <Badge variant="outline" className="rounded-full text-xs">
                     <Flame className="mr-1 h-3 w-3 text-gold" />
