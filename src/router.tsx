@@ -24,7 +24,7 @@ export const getRouter = () => {
           import("@tanstack/query-sync-storage-persister"),
         ]);
         persistQueryClient({
-          queryClient,
+          queryClient: queryClient as never,
           persister: createSyncStoragePersister({
             storage: window.localStorage,
             key: "beacon-query-cache-v1",
