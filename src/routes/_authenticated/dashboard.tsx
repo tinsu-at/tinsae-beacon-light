@@ -104,8 +104,9 @@ function Dashboard() {
         .select("habit_id")
         .eq("user_id", user!.id)
         .eq("log_date", today);
-      const done = new Set((logs ?? []).map((l) => l.habit_id));
-      return { total: habits?.length ?? 0, done: done.size, habits: habits ?? [], doneIds: done };
+      const doneIds = Array.from(new Set((logs ?? []).map((l) => l.habit_id)));
+      return { total: habits?.length ?? 0, done: doneIds.length, habits: habits ?? [], doneIds };
+
     },
   });
 
@@ -274,7 +275,7 @@ function Dashboard() {
               </p>
               <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
                 {(habitProgress?.habits ?? []).slice(0, 3).map((h) => {
-                  const done = habitProgress?.doneIds.has(h.id);
+                  const done = habitProgress?.doneIds?.includes(h.id);
                   return (
                     <li key={h.id} className="flex items-center gap-2 truncate">
                       <span
