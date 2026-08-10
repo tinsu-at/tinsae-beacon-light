@@ -17,6 +17,13 @@ export const getRouter = () => {
   });
 
   if (typeof window !== "undefined") {
+    // Drop older cache versions: they may contain non-JSON-safe values
+    // (Sets/Maps) that rehydrate as plain objects and crash pages.
+    try {
+      window.localStorage.removeItem("beacon-query-cache-v1");
+    } catch {
+      // ignore
+    }
     void (async () => {
       try {
         const [{ persistQueryClient }, { createSyncStoragePersister }] = await Promise.all([
@@ -27,7 +34,7 @@ export const getRouter = () => {
           queryClient: queryClient as never,
           persister: createSyncStoragePersister({
             storage: window.localStorage,
-            key: "beacon-query-cache-v1",
+            key: "beacon-query-cache-v2",
             throttleTime: 1000,
           }),
           maxAge: 1000 * 60 * 60 * 24 * 7,
@@ -37,6 +44,7 @@ export const getRouter = () => {
       }
     })();
   }
+
 
   const router = createRouter({
     routeTree,
