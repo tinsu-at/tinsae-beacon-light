@@ -11,6 +11,8 @@ import {
   MessageCircle,
   Brain,
   Code2,
+  Send,
+
 } from "lucide-react";
 import {
   Sidebar,
@@ -36,9 +38,11 @@ export const NAV_ITEMS = [
   { title: "Journal", url: "/journal", icon: BookText },
   { title: "Goals", url: "/goals", icon: Target },
   { title: "Progress", url: "/progress", icon: TrendingUp },
+  { title: "Telegram", url: "/telegram", icon: Send },
   { title: "Developer", url: "/developer", icon: Code2 },
   { title: "Settings", url: "/settings", icon: Settings },
 ] as const;
+
 
 
 export function AppSidebar() {
