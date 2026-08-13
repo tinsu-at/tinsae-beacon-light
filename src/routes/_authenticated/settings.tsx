@@ -176,7 +176,10 @@ function SettingsPage() {
         </CardContent>
       </Card>
 
+      <TelegramSettingsCard />
+
       <Card className="rounded-3xl">
+
         <CardHeader>
           <CardTitle className="font-serif text-lg">Notifications</CardTitle>
         </CardHeader>
