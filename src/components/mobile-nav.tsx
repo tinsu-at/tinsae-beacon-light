@@ -12,6 +12,8 @@ import {
   Code2,
   Settings,
   MoreHorizontal,
+  Send,
+
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
@@ -27,7 +29,9 @@ const moreItems = [
   { title: "Goals", url: "/goals", icon: Target },
   { title: "Progress", url: "/progress", icon: TrendingUp },
   { title: "Memory", url: "/memory", icon: Brain },
+  { title: "Telegram", url: "/telegram", icon: Send },
   { title: "Developer", url: "/developer", icon: Code2 },
+
   { title: "Settings", url: "/settings", icon: Settings },
 ] as const;
 

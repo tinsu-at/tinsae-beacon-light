@@ -28,6 +28,8 @@ import {
   isPushConfigured,
   type PushStatus,
 } from "@/lib/push";
+import { TelegramSettingsCard } from "@/components/telegram-settings-card";
+
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings — Beacon" }] }),
@@ -176,7 +178,10 @@ function SettingsPage() {
         </CardContent>
       </Card>
 
+      <TelegramSettingsCard />
+
       <Card className="rounded-3xl">
+
         <CardHeader>
           <CardTitle className="font-serif text-lg">Notifications</CardTitle>
         </CardHeader>
