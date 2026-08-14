@@ -211,6 +211,30 @@ export function scheduleAll(prefs: NotifPrefs = loadNotifPrefs()) {
   if (typeof window === "undefined") return;
   for (const t of timers.values()) clearTimeout(t);
   timers.clear();
+
+  if (isNative()) {
+    const keys = Object.keys(prefs) as NotifKey[];
+    void scheduleNativeNotifications(
+      keys
+        .filter((k) => prefs[k].enabled)
+        .map((k, i) => {
+          const p = prefs[k];
+          const [hour, minute] = p.time.split(":").map(Number);
+          return {
+            id: i + 1,
+            title: p.title,
+            body: p.body,
+            hour,
+            minute,
+            weekday: p.day,
+            sound: p.sound !== false,
+          };
+        }),
+    );
+    return;
+  }
+
+
   for (const key of Object.keys(prefs) as NotifKey[]) {
     const pref = prefs[key];
     if (!pref.enabled) continue;
