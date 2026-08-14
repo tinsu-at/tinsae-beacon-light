@@ -1,7 +1,16 @@
 // Local, on-device notification scheduler for Beacon.
 // Uses the browser Notification API. Persists preferences in localStorage
 // and re-arms itself each time the page loads or a preference changes.
-// Push notifications from a server would require additional infrastructure.
+// On Android (Capacitor) it delegates to native local notifications so
+// reminders fire even when the app is closed.
+import {
+  isNative,
+  nativeNotifPermission,
+  requestNativeNotifPermission,
+  scheduleNativeNotifications,
+} from "@/lib/native";
+
+
 
 export type NotifKey =
   | "morningBriefing"
