@@ -106,15 +106,32 @@ export function saveNotifPrefs(prefs: NotifPrefs) {
 }
 
 export async function requestNotifPermission(): Promise<NotificationPermission> {
-  if (typeof window === "undefined" || !("Notification" in window)) return "denied";
+  if (typeof window === "undefined") return "denied";
+  if (isNative()) {
+    const ok = await requestNativeNotifPermission();
+    nativePermission = ok ? "granted" : "denied";
+    if (ok) scheduleAll();
+    return nativePermission;
+  }
+  if (!("Notification" in window)) return "denied";
   if (Notification.permission === "granted") return "granted";
   return await Notification.requestPermission();
 }
 
+let nativePermission: NotificationPermission = "default";
+if (typeof window !== "undefined" && isNative()) {
+  void nativeNotifPermission().then((ok) => {
+    nativePermission = ok ? "granted" : "default";
+  });
+}
+
 export function notifPermission(): NotificationPermission {
-  if (typeof window === "undefined" || !("Notification" in window)) return "denied";
+  if (typeof window === "undefined") return "denied";
+  if (isNative()) return nativePermission;
+  if (!("Notification" in window)) return "denied";
   return Notification.permission;
 }
+
 
 const timers = new Map<NotifKey, ReturnType<typeof setTimeout>>();
 
