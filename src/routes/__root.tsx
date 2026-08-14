@@ -138,7 +138,24 @@ function RootComponent() {
   useEffect(() => {
     initPwa();
     scheduleAll();
+    void initNative({
+      dark: document.documentElement.classList.contains("dark"),
+      onBack: () => {
+        // Let an open dialog/sheet swallow the back press first.
+        const overlay = document.querySelector(
+          "[data-state='open'][role='dialog'], [data-state='open'][data-radix-popper-content-wrapper]",
+        );
+        if (overlay) {
+          document.dispatchEvent(
+            new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+          );
+          return true;
+        }
+        return false;
+      },
+    });
   }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
