@@ -1,7 +1,16 @@
 // Local, on-device notification scheduler for Beacon.
 // Uses the browser Notification API. Persists preferences in localStorage
 // and re-arms itself each time the page loads or a preference changes.
-// Push notifications from a server would require additional infrastructure.
+// On Android (Capacitor) it delegates to native local notifications so
+// reminders fire even when the app is closed.
+import {
+  isNative,
+  nativeNotifPermission,
+  requestNativeNotifPermission,
+  scheduleNativeNotifications,
+} from "@/lib/native";
+
+
 
 export type NotifKey =
   | "morningBriefing"
@@ -106,15 +115,32 @@ export function saveNotifPrefs(prefs: NotifPrefs) {
 }
 
 export async function requestNotifPermission(): Promise<NotificationPermission> {
-  if (typeof window === "undefined" || !("Notification" in window)) return "denied";
+  if (typeof window === "undefined") return "denied";
+  if (isNative()) {
+    const ok = await requestNativeNotifPermission();
+    nativePermission = ok ? "granted" : "denied";
+    if (ok) scheduleAll();
+    return nativePermission;
+  }
+  if (!("Notification" in window)) return "denied";
   if (Notification.permission === "granted") return "granted";
   return await Notification.requestPermission();
 }
 
+let nativePermission: NotificationPermission = "default";
+if (typeof window !== "undefined" && isNative()) {
+  void nativeNotifPermission().then((ok) => {
+    nativePermission = ok ? "granted" : "default";
+  });
+}
+
 export function notifPermission(): NotificationPermission {
-  if (typeof window === "undefined" || !("Notification" in window)) return "denied";
+  if (typeof window === "undefined") return "denied";
+  if (isNative()) return nativePermission;
+  if (!("Notification" in window)) return "denied";
   return Notification.permission;
 }
+
 
 const timers = new Map<NotifKey, ReturnType<typeof setTimeout>>();
 
@@ -185,6 +211,30 @@ export function scheduleAll(prefs: NotifPrefs = loadNotifPrefs()) {
   if (typeof window === "undefined") return;
   for (const t of timers.values()) clearTimeout(t);
   timers.clear();
+
+  if (isNative()) {
+    const keys = Object.keys(prefs) as NotifKey[];
+    void scheduleNativeNotifications(
+      keys
+        .filter((k) => prefs[k].enabled)
+        .map((k, i) => {
+          const p = prefs[k];
+          const [hour, minute] = p.time.split(":").map(Number);
+          return {
+            id: i + 1,
+            title: p.title,
+            body: p.body,
+            hour,
+            minute,
+            weekday: p.day,
+            sound: p.sound !== false,
+          };
+        }),
+    );
+    return;
+  }
+
+
   for (const key of Object.keys(prefs) as NotifKey[]) {
     const pref = prefs[key];
     if (!pref.enabled) continue;

@@ -13,6 +13,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { initPwa } from "../lib/pwa";
 import { scheduleAll } from "../lib/notifications";
+import { initNative } from "../lib/native";
+
 import { ThemeProvider } from "@/lib/theme";
 import { AuthProvider } from "@/lib/auth";
 import { Toaster } from "@/components/ui/sonner";
@@ -138,7 +140,24 @@ function RootComponent() {
   useEffect(() => {
     initPwa();
     scheduleAll();
+    void initNative({
+      dark: document.documentElement.classList.contains("dark"),
+      onBack: () => {
+        // Let an open dialog/sheet swallow the back press first.
+        const overlay = document.querySelector(
+          "[data-state='open'][role='dialog'], [data-state='open'][data-radix-popper-content-wrapper]",
+        );
+        if (overlay) {
+          document.dispatchEvent(
+            new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+          );
+          return true;
+        }
+        return false;
+      },
+    });
   }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
