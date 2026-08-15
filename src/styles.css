@@ -239,3 +239,18 @@
 @utility animate-float { animation: beacon-float 6s ease-in-out infinite; }
 @utility animate-float-slow { animation: beacon-float-slow 10s ease-in-out infinite; }
 @utility animate-fade-up { animation: beacon-fade-up .7s cubic-bezier(.2,.7,.2,1) both; }
+
+/* Full-screen / standalone mobile polish: respect notches and home
+   indicators, and never allow sideways scroll on small Android screens. */
+html, body {
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+
+@utility safe-top { padding-top: env(safe-area-inset-top, 0px); }
+@utility safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+@media (display-mode: standalone) {
+  body { user-select: none; }
+  input, textarea, [contenteditable] { user-select: text; }
+}
