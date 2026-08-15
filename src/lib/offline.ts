@@ -69,7 +69,19 @@ function writeQueue(q: OutboxOp[]) {
   emit();
 }
 
-export function enqueue(op: NewOutboxOp) {
+/**
+ * Give every queued insert a client-generated primary key so replaying it is
+ * idempotent: if the row already landed, the retry fails on the unique key
+ * instead of creating a duplicate (see the duplicate handling in syncOutbox).
+ */
+function withStableId(op: NewOutboxOp): NewOutboxOp {
+  if (op.type !== "insert") return op;
+  if (typeof op.values["id"] === "string") return op;
+  return { ...op, values: { ...op.values, id: crypto.randomUUID() } };
+}
+
+export function enqueue(rawOp: NewOutboxOp) {
+  const op = withStableId(rawOp);
   const full = { ...op, id: crypto.randomUUID(), at: Date.now() } as OutboxOp;
   const q = readQueue();
   // Collapse repeated updates to the same row+table (last write wins).
