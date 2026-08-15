@@ -42,7 +42,7 @@ export function MobileNav() {
 
   return (
     <nav
-      className="glass-panel fixed inset-x-3 bottom-3 z-30 flex items-center justify-around rounded-2xl px-2 py-2 shadow-elegant md:hidden"
+      className="safe-bottom glass-panel fixed inset-x-3 bottom-3 z-30 flex items-center justify-around rounded-2xl px-2 py-2 shadow-elegant md:hidden"
       aria-label="Primary"
     >
       {items.map((item) => {
