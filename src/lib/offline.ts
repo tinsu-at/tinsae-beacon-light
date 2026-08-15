@@ -162,8 +162,13 @@ export async function syncOutbox(): Promise<{ synced: number; failed: number }> 
     try {
       const { error } = await runOp(op);
       if (error) {
+        // The row already exists: a previous attempt landed before we saw the
+        // response. Idempotent replay — count it as synced, never duplicate.
+        if (op.type === "insert" && /duplicate key|already exists|23505/i.test(error.message)) {
+          synced++;
+        }
         // Row already gone (deleted elsewhere) is not a data-loss conflict.
-        if (op.type !== "insert" && /not found|no rows/i.test(error.message)) {
+        else if (op.type !== "insert" && /not found|no rows/i.test(error.message)) {
           synced++;
         } else if (!isOnline()) {
           remaining.push(op);
