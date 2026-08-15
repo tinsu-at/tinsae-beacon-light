@@ -31,6 +31,9 @@ jobs:
       - name: Build web app
         run: npm run build
 
+      -       - name: Prepare Capacitor assets
+        run: mkdir -p android/app/src/main/assets
+
       - name: Sync Capacitor
         run: npx cap sync android
 
