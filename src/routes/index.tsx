@@ -33,6 +33,9 @@ function Landing() {
           <span className="font-serif text-xl font-semibold tracking-tight">Beacon</span>
         </Link>
         <nav className="flex items-center gap-2">
+          <Button asChild variant="ghost" className="rounded-full">
+            <Link to="/pricing">Pricing</Link>
+          </Button>
           <Button asChild className="rounded-full">
             <Link to="/auth">Sign in</Link>
           </Button>

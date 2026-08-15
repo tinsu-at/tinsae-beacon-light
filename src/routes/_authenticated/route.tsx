@@ -69,7 +69,7 @@ function Shell() {
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
         <div className="flex flex-1 flex-col">
-          <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-border/60 bg-background/70 px-4 backdrop-blur">
+          <header className="safe-top sticky top-0 z-20 box-content flex h-14 items-center justify-between border-b border-border/60 bg-background/70 px-4 backdrop-blur">
             <div className="hidden md:block">
               <SidebarTrigger />
             </div>

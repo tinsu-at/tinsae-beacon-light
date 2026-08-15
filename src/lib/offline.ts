@@ -69,7 +69,19 @@ function writeQueue(q: OutboxOp[]) {
   emit();
 }
 
-export function enqueue(op: NewOutboxOp) {
+/**
+ * Give every queued insert a client-generated primary key so replaying it is
+ * idempotent: if the row already landed, the retry fails on the unique key
+ * instead of creating a duplicate (see the duplicate handling in syncOutbox).
+ */
+function withStableId(op: NewOutboxOp): NewOutboxOp {
+  if (op.type !== "insert") return op;
+  if (typeof op.values["id"] === "string") return op;
+  return { ...op, values: { ...op.values, id: crypto.randomUUID() } };
+}
+
+export function enqueue(rawOp: NewOutboxOp) {
+  const op = withStableId(rawOp);
   const full = { ...op, id: crypto.randomUUID(), at: Date.now() } as OutboxOp;
   const q = readQueue();
   // Collapse repeated updates to the same row+table (last write wins).
@@ -150,8 +162,13 @@ export async function syncOutbox(): Promise<{ synced: number; failed: number }> 
     try {
       const { error } = await runOp(op);
       if (error) {
+        // The row already exists: a previous attempt landed before we saw the
+        // response. Idempotent replay — count it as synced, never duplicate.
+        if (op.type === "insert" && /duplicate key|already exists|23505/i.test(error.message)) {
+          synced++;
+        }
         // Row already gone (deleted elsewhere) is not a data-loss conflict.
-        if (op.type !== "insert" && /not found|no rows/i.test(error.message)) {
+        else if (op.type !== "insert" && /not found|no rows/i.test(error.message)) {
           synced++;
         } else if (!isOnline()) {
           remaining.push(op);

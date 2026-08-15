@@ -40,7 +40,7 @@ export function OfflineBanner() {
             ? `Syncing ${s.done}/${s.total}…`
             : s.online
               ? `${s.pending} change${s.pending === 1 ? "" : "s"} waiting to sync`
-              : `Offline mode${s.pending ? ` — ${s.pending} saved locally` : " — changes save locally"}`}
+              : `Offline • Changes saved locally${s.pending ? ` (${s.pending})` : ""}`}
         </span>
         {s.online && !!s.pending && !s.syncing && (
           <button
