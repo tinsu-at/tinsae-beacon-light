@@ -234,20 +234,21 @@ const [lockStep, setLockStep] = useState<"idle" | "confirm">("idle");
       <Switch
         checked={lockEnabled}
         onCheckedChange={(enabled) => {
-          if (!enabled) {
-            disableLock();
-            setLockEnabled(false);
-            setLockSecret("");
-            setLockFirstSecret("");
-            setLockStep("idle");
-            toast.success("App Lock disabled");
-          } else {
-            setLockEnabled(true);
-            setLockSecret("");
-            setLockFirstSecret("");
-            setLockStep("idle");
-          }
-        }}
+  if (!enabled) {
+    disableLock();
+    setLockEnabled(false);
+    setLockSecret("");
+    setLockFirstSecret("");
+    setLockStep("idle");
+    toast.success("App Lock disabled");
+    return;
+  }
+
+  setLockEnabled(true);
+  setLockSecret("");
+  setLockFirstSecret("");
+  setLockStep("idle");
+}}
       />
     </div>
 
