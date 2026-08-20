@@ -76,6 +76,12 @@ function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const [name, setName] = useState("");
   const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_NOTIF_PREFS);
+  const [lockEnabled, setLockEnabled] = useState(false);
+const [lockKind, setLockKind] = useState<LockKind>("pin");
+const [lockTimeout, setLockTimeoutState] = useState(0);
+const [lockSecret, setLockSecret] = useState("");
+const [lockStep, setLockStep] = useState<"idle" | "confirm">("idle");
+  const [lockFirstSecret, setLockFirstSecret] = useState("");
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [push, setPush] = useState<PushStatus>({ state: "prompt" });
   const [expanded, setExpanded] = useState<NotifKey | null>(null);
@@ -97,6 +103,12 @@ function SettingsPage() {
     setPrefs(loadNotifPrefs());
     setPermission(notifPermission());
     getPushStatus().then(setPush).catch(() => {});
+    const cfg = getLockConfig();
+  if (cfg) {
+    setLockEnabled(cfg.enabled);
+    setLockKind(cfg.kind);
+    setLockTimeoutState(cfg.timeoutMin);
+  }
   }, []);
 
   async function saveProfile(e: React.FormEvent) {
@@ -198,6 +210,198 @@ function SettingsPage() {
       </Card>
 
       <TelegramSettingsCard />
+      <Card className="rounded-3xl">
+  <CardHeader>
+    <CardTitle className="flex items-center gap-2 font-serif text-lg">
+      {lockEnabled ? (
+        <Lock className="h-4 w-4" />
+      ) : (
+        <Unlock className="h-4 w-4" />
+      )}
+      App Lock
+    </CardTitle>
+  </CardHeader>
+
+  <CardContent className="space-y-4">
+    <div className="flex items-center justify-between rounded-2xl border border-border p-4">
+      <div>
+        <p className="font-medium">Lock Beacon</p>
+        <p className="text-xs text-muted-foreground">
+          Protect Beacon with a PIN or pattern. Works offline.
+        </p>
+      </div>
+
+      <Switch
+        checked={lockEnabled}
+        onCheckedChange={(enabled) => {
+          if (!enabled) {
+            disableLock();
+            setLockEnabled(false);
+            setLockSecret("");
+            setLockFirstSecret("");
+            setLockStep("idle");
+            toast.success("App Lock disabled");
+          } else {
+            setLockEnabled(true);
+            setLockSecret("");
+            setLockFirstSecret("");
+            setLockStep("idle");
+          }
+        }}
+      />
+    </div>
+
+    {lockEnabled && (
+      <>
+        <div className="rounded-2xl border border-border p-4 space-y-4">
+          <div>
+            <p className="font-medium">Lock method</p>
+            <p className="text-xs text-muted-foreground">
+              Choose how you unlock Beacon.
+            </p>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant={lockKind === "pin" ? "default" : "outline"}
+              className="rounded-full"
+              onClick={() => {
+                setLockKind("pin");
+                setLockSecret("");
+                setLockFirstSecret("");
+                setLockStep("idle");
+              }}
+            >
+              PIN
+            </Button>
+
+            <Button
+              type="button"
+              size="sm"
+              variant={lockKind === "pattern" ? "default" : "outline"}
+              className="rounded-full"
+              onClick={() => {
+                setLockKind("pattern");
+                setLockSecret("");
+                setLockFirstSecret("");
+                setLockStep("idle");
+              }}
+            >
+              Pattern
+            </Button>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border p-4 space-y-3">
+          <div>
+            <p className="font-medium">Auto-lock</p>
+            <p className="text-xs text-muted-foreground">
+              Choose when Beacon should lock after you leave it.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: "Immediately", value: 0 },
+              { label: "1 min", value: 1 },
+              { label: "5 min", value: 5 },
+              { label: "15 min", value: 15 },
+            ].map((option) => (
+              <Button
+                key={option.value}
+                type="button"
+                size="sm"
+                variant={lockTimeout === option.value ? "default" : "outline"}
+                className="rounded-full"
+                onClick={() => {
+                  setLockTimeoutState(option.value);
+
+                  if (isLockEnabled()) {
+                    setLockTimeout(option.value);
+                  }
+                }}
+              >
+                {option.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-border p-4 space-y-4">
+          <div>
+            <p className="font-medium">
+              {lockStep === "confirm"
+                ? "Confirm your lock"
+                : "Set your lock"}
+            </p>
+
+            <p className="text-xs text-muted-foreground">
+              {lockKind === "pin"
+                ? "Enter the same 4-digit PIN twice."
+                : "Draw the same pattern twice using at least 3 points."}
+            </p>
+          </div>
+
+          {lockKind === "pin" ? (
+            <PinPad
+              value={lockSecret}
+              onChange={(value) => {
+                if (value.length < 4) {
+                  setLockSecret(value);
+                  return;
+                }
+
+                if (lockStep === "idle") {
+                  setLockFirstSecret(value);
+                  setLockSecret("");
+                  setLockStep("confirm");
+                  return;
+                }
+
+                if (value === lockFirstSecret) {
+                  void setLock(lockKind, value, lockTimeout);
+                  setLockSecret("");
+                  setLockFirstSecret("");
+                  setLockStep("idle");
+                  toast.success("App Lock enabled");
+                } else {
+                  setLockSecret("");
+                  toast.error("PINs do not match. Try again.");
+                }
+              }}
+            />
+          ) : (
+            <PatternPad
+              onComplete={(nodes) => {
+                const pattern = nodes.join("-");
+
+                if (lockStep === "idle") {
+                  setLockFirstSecret(pattern);
+                  setLockStep("confirm");
+                  return;
+                }
+
+                if (pattern === lockFirstSecret) {
+                  void setLock(lockKind, pattern, lockTimeout);
+                  setLockSecret("");
+                  setLockFirstSecret("");
+                  setLockStep("idle");
+                  toast.success("App Lock enabled");
+                } else {
+                  setLockFirstSecret("");
+                  setLockStep("idle");
+                  toast.error("Patterns do not match. Try again.");
+                }
+              }}
+            />
+          )}
+        </div>
+      </>
+    )}
+  </CardContent>
+</Card>
 
       <Card className="rounded-3xl">
 
