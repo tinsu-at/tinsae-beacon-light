@@ -12,6 +12,7 @@ import { BeaconReflection } from "@/components/beacon-reflection";
 import { OfflineBanner } from "@/components/offline-banner";
 import { toast } from "sonner";
 import { notifPermission, requestNotifPermission, scheduleAll } from "@/lib/notifications";
+import { AppLock } from "@/components/app-lock";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/_authenticated")({
   component: Shell,
 });
 
-function Shell() {
+function Shell(<AppLock />) {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { theme, toggle } = useTheme();
@@ -66,6 +67,7 @@ function Shell() {
 
   return (
     <SidebarProvider>
+      <AppLock />
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
         <div className="flex flex-1 flex-col">
