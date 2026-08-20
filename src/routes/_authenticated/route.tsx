@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated")({
   component: Shell,
 });
 
-function Shell(<AppLock />) {
+function Shell() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const { theme, toggle } = useTheme();
