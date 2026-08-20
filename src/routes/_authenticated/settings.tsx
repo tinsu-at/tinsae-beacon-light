@@ -10,7 +10,26 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Moon, Sun, BellRing, Send, Volume2, VibrateIcon, ChevronDown } from "lucide-react";
+import {
+  Moon,
+  Sun,
+  BellRing,
+  Send,
+  Volume2,
+  VibrateIcon,
+  ChevronDown,
+  Lock,
+  Unlock,
+} from "lucide-react";
+import {
+  disableLock,
+  getLockConfig,
+  isLockEnabled,
+  setLock,
+  setLockTimeout,
+  type LockKind,
+} from "@/lib/lock";
+import { PinPad, PatternPad } from "@/components/app-lock";
 import {
   DEFAULT_NOTIF_PREFS,
   loadNotifPrefs,
